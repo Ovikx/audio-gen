@@ -1,23 +1,36 @@
-use crate::{context::audio_context::AudioContext, node::source::Source};
+use crate::{
+    context::audio_context::AudioContext,
+    node::source::{SharedFloatSource, Source},
+};
 
-pub struct MultiplyNode<S: Source<f32>, G: Source<f32>> {
-    sample_source: S,
-    factor_source: G,
+pub struct MultiplyNode {
+    multiplicand_source: SharedFloatSource,
+    multiplier_source: SharedFloatSource,
 }
 
-impl<S: Source<f32>, G: Source<f32>> MultiplyNode<S, G> {
-    pub fn new(sample_source: S, factor_source: G) -> Self {
+impl MultiplyNode {
+    pub fn new(
+        multiplicand_source: SharedFloatSource,
+        multiplier_source: SharedFloatSource,
+    ) -> Self {
         MultiplyNode {
-            sample_source,
-            factor_source,
+            multiplicand_source,
+            multiplier_source,
         }
     }
 }
 
-impl<S: Source<f32>, G: Source<f32>> Source<f32> for MultiplyNode<S, G> {
+impl Source<f32> for MultiplyNode {
     fn poll(&mut self, audio_context: &AudioContext) -> Option<f32> {
-        self.sample_source
+        self.multiplicand_source
+            .borrow_mut()
             .poll(audio_context)
-            .map(|f| f * self.factor_source.poll(audio_context).unwrap_or(1.0))
+            .map(|f| {
+                f * self
+                    .multiplier_source
+                    .borrow_mut()
+                    .poll(audio_context)
+                    .unwrap_or(1.0)
+            })
     }
 }
