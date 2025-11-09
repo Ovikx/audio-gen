@@ -1,20 +1,23 @@
-use std::{cell::RefCell, rc::Rc};
-
-use crate::{context::audio_context::AudioContext, node::source::Source};
+use crate::{
+    context::audio_context::AudioContext,
+    source::{LogicalTimestamp, SharedCachedFloatSource},
+};
 
 pub struct SampleGenerator {
-    output_source: Rc<RefCell<Box<dyn Source<f32>>>>,
+    output_source: SharedCachedFloatSource,
     audio_context: AudioContext,
+    logical_clock: LogicalTimestamp,
 }
 
 impl SampleGenerator {
     pub fn new(
-        output_source: Rc<RefCell<Box<dyn Source<f32>>>>,
+        output_source: SharedCachedFloatSource,
         audio_context: AudioContext,
     ) -> SampleGenerator {
         SampleGenerator {
             output_source,
             audio_context,
+            logical_clock: 0,
         }
     }
 
@@ -24,9 +27,10 @@ impl SampleGenerator {
             samples.push(
                 self.output_source
                     .borrow_mut()
-                    .poll(&self.audio_context)
+                    .poll(&self.audio_context, self.logical_clock)
                     .unwrap_or(0.0),
             );
+            self.logical_clock = self.logical_clock.wrapping_add(1);
         }
         samples
     }

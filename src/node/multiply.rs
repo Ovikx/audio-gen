@@ -1,17 +1,17 @@
 use crate::{
     context::audio_context::AudioContext,
-    node::source::{SharedFloatSource, Source},
+    source::{LogicalTimestamp, SharedCachedFloatSource, Source},
 };
 
 pub struct MultiplyNode {
-    multiplicand_source: SharedFloatSource,
-    multiplier_source: SharedFloatSource,
+    multiplicand_source: SharedCachedFloatSource,
+    multiplier_source: SharedCachedFloatSource,
 }
 
 impl MultiplyNode {
     pub fn new(
-        multiplicand_source: SharedFloatSource,
-        multiplier_source: SharedFloatSource,
+        multiplicand_source: SharedCachedFloatSource,
+        multiplier_source: SharedCachedFloatSource,
     ) -> Self {
         MultiplyNode {
             multiplicand_source,
@@ -21,15 +21,15 @@ impl MultiplyNode {
 }
 
 impl Source<f32> for MultiplyNode {
-    fn poll(&mut self, audio_context: &AudioContext) -> Option<f32> {
+    fn poll(&mut self, audio_context: &AudioContext, timestamp: LogicalTimestamp) -> Option<f32> {
         self.multiplicand_source
             .borrow_mut()
-            .poll(audio_context)
+            .poll(audio_context, timestamp)
             .map(|f| {
                 f * self
                     .multiplier_source
                     .borrow_mut()
-                    .poll(audio_context)
+                    .poll(audio_context, timestamp)
                     .unwrap_or(1.0)
             })
     }
