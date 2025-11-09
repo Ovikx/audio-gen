@@ -15,7 +15,7 @@ impl CachedFloatSource {
     pub fn new(sample_source: Box<dyn Source<f32>>) -> Self {
         CachedFloatSource {
             sample_source,
-            curr_timestamp: 0,
+            curr_timestamp: 1, // TODO: Have a clearer default state. This is currently set to 1 since we expect the first polled timestamp to be 0.
             cached_sample: None,
         }
     }
