@@ -1,7 +1,6 @@
 [package]
-name = "audio_gen"
+name = "test-utils"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-test-utils = { path = "test-utils" }

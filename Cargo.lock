@@ -5,3 +5,10 @@ version = 4
 [[package]]
 name = "audio_gen"
 version = "0.1.0"
+dependencies = [
+ "test-utils",
+]
+
+[[package]]
+name = "test-utils"
+version = "0.1.0"
