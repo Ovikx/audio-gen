@@ -1,31 +1,19 @@
-use std::{cell::RefCell, rc::Rc};
-
-use audio_gen::{
-    context::audio_context::AudioContext,
-    generator::SampleGenerator,
-    node::{float::Float32Source, spline_float::SplineFloatNode},
-    source::CachedFloatSource,
-};
+use audio_gen::{context::audio_context::AudioContext, generator::SampleGenerator, graph};
 
 use test_utils::threshold_eq_float32;
 
 #[test]
 fn test_spline_node_sequence() {
-    let spline_node = SplineFloatNode::new(
-        Rc::new(RefCell::new(CachedFloatSource::new(Box::new(
-            Float32Source::new(1.),
-        )))),
-        vec![(0.0, 0.0), (1.0, 1.0)],
-    );
+    let mut graph = graph::Graph::new();
+    let float_node_id = graph.insert_float_node(1.);
+    graph.insert_spline_float_node(float_node_id, vec![(0.0, 0.0), (1.0, 1.0)]);
 
     let sample_rate = 4.;
-    let mut generator = SampleGenerator::new(
-        Rc::new(RefCell::new(CachedFloatSource::new(Box::new(spline_node)))),
-        AudioContext::new(sample_rate),
-    );
+    let mut generator =
+        SampleGenerator::new(graph.nodes(), AudioContext::new(sample_rate)).unwrap();
 
     let num_sets = 100;
-    let samples = generator.generate_samples(4 * num_sets + 1);
+    let samples = generator.batch_poll(4 * num_sets + 1);
     let expected_samples: Vec<f32> = vec![0.25, 0.5, 0.75, 0.0];
     assert!(threshold_eq_float32(samples[0], 0.));
     dbg!(&samples);

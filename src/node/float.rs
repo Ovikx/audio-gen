@@ -1,20 +1,35 @@
-use crate::{
-    context::audio_context::AudioContext,
-    source::{LogicalTimestamp, Source},
-};
+use crate::{context::audio_context::AudioContext, source::Source};
 
-pub struct Float32Source {
+pub struct FloatSource {
+    id: usize,
     value: f32,
+    dependency_ids: Vec<usize>,
 }
 
-impl Float32Source {
-    pub fn new(value: f32) -> Self {
-        Float32Source { value }
+impl FloatSource {
+    pub fn new(id: usize, value: f32) -> Self {
+        FloatSource {
+            id,
+            value,
+            dependency_ids: vec![],
+        }
     }
 }
 
-impl Source<f32> for Float32Source {
-    fn poll(&mut self, _audio_context: &AudioContext, _timestamp: LogicalTimestamp) -> Option<f32> {
+impl Source for FloatSource {
+    fn poll(
+        &mut self,
+        _audio_context: &AudioContext,
+        _id_to_output: &crate::source::NodeOutput,
+    ) -> Option<f32> {
         Some(self.value)
+    }
+
+    fn id(&self) -> usize {
+        self.id
+    }
+
+    fn dependency_ids(&self) -> &Vec<usize> {
+        &self.dependency_ids
     }
 }

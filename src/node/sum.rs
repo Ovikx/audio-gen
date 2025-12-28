@@ -1,39 +1,39 @@
 use crate::{
     context::audio_context::AudioContext,
-    source::Source,
-    source::{LogicalTimestamp, SharedCachedFloatSource},
+    source::{NodeOutput, Source},
 };
 
 pub struct SumNode {
-    augend_source: SharedCachedFloatSource,
-    addend_source: SharedCachedFloatSource,
+    id: usize,
+    augend_source_id: usize,
+    addend_source_id: usize,
+    dependency_ids: Vec<usize>,
 }
 
 impl SumNode {
-    pub fn new(
-        augend_source: SharedCachedFloatSource,
-        addend_source: SharedCachedFloatSource,
-    ) -> Self {
+    pub fn new(id: usize, augend_source_id: usize, addend_source_id: usize) -> Self {
         SumNode {
-            augend_source,
-            addend_source,
+            id,
+            augend_source_id,
+            addend_source_id,
+            dependency_ids: vec![augend_source_id, addend_source_id],
         }
     }
 }
 
-impl Source<f32> for SumNode {
-    fn poll(&mut self, audio_context: &AudioContext, timestamp: LogicalTimestamp) -> Option<f32> {
-        let augend = self
-            .augend_source
-            .borrow_mut()
-            .poll(audio_context, timestamp);
-        let addend = self
-            .addend_source
-            .borrow_mut()
-            .poll(audio_context, timestamp);
-        if let (Some(augend), Some(addend)) = (augend, addend) {
-            return Some(augend + addend);
-        }
-        None
+impl Source for SumNode {
+    fn poll(&mut self, _audio_context: &AudioContext, id_to_output: &NodeOutput) -> Option<f32> {
+        Some(
+            id_to_output[self.augend_source_id].unwrap_or(0.)
+                + id_to_output[self.addend_source_id].unwrap_or(0.),
+        )
+    }
+
+    fn id(&self) -> usize {
+        self.id
+    }
+
+    fn dependency_ids(&self) -> &Vec<usize> {
+        &self.dependency_ids
     }
 }

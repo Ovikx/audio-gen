@@ -1,38 +1,9 @@
 use crate::context::audio_context::AudioContext;
-use std::{cell::RefCell, rc::Rc};
 
-pub trait Source<T> {
-    fn poll(&mut self, audio_context: &AudioContext, timestamp: LogicalTimestamp) -> Option<T>;
+pub type NodeOutput = Vec<Option<f32>>;
+
+pub trait Source {
+    fn poll(&mut self, audio_context: &AudioContext, id_to_output: &NodeOutput) -> Option<f32>;
+    fn id(&self) -> usize; // Stored as a usize since IDs are used for indexing arrays
+    fn dependency_ids(&self) -> &Vec<usize>;
 }
-
-pub struct CachedFloatSource {
-    sample_source: Box<dyn Source<f32>>,
-    curr_timestamp: LogicalTimestamp,
-    cached_sample: Option<f32>,
-}
-
-impl CachedFloatSource {
-    pub fn new(sample_source: Box<dyn Source<f32>>) -> Self {
-        CachedFloatSource {
-            sample_source,
-            curr_timestamp: 1, // TODO: Have a clearer default state. This is currently set to 1 since we expect the first polled timestamp to be 0.
-            cached_sample: None,
-        }
-    }
-
-    pub fn poll(
-        &mut self,
-        audio_context: &AudioContext,
-        timestamp: LogicalTimestamp,
-    ) -> Option<f32> {
-        if timestamp != self.curr_timestamp {
-            self.cached_sample = self.sample_source.poll(audio_context, timestamp);
-            self.curr_timestamp = timestamp;
-        }
-
-        self.cached_sample
-    }
-}
-
-pub type LogicalTimestamp = u8;
-pub type SharedCachedFloatSource = Rc<RefCell<CachedFloatSource>>;
