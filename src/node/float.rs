@@ -1,4 +1,4 @@
-use crate::{context::audio_context::AudioContext, source::Source};
+use crate::{context::AudioContext, source::Source};
 
 pub struct FloatSource {
     id: usize,

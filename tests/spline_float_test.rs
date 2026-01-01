@@ -1,4 +1,4 @@
-use audio_gen::{context::audio_context::AudioContext, generator::SampleGenerator, graph};
+use audio_gen::{context::AudioContext, generator::SampleGenerator, graph};
 
 use test_utils::threshold_eq_float32;
 

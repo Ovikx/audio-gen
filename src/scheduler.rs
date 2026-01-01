@@ -2,15 +2,18 @@ use std::{cell::RefCell, io::Error, rc::Rc};
 
 use crate::source::Source;
 
+pub type SharedNode = Rc<RefCell<dyn Source>>;
+pub type NodeExecutionSchedule = Vec<SharedNode>;
+
 pub fn build_schedule(
-    nodes: Vec<Rc<RefCell<dyn Source>>>,
+    nodes: NodeExecutionSchedule,
     max_id: usize,
-) -> Result<Vec<Rc<RefCell<dyn Source>>>, Error> {
+) -> Result<NodeExecutionSchedule, Error> {
     dbg!("max_id ", max_id);
     let mut schedule = vec![];
 
     let mut id_to_dependent_ids: Vec<Vec<usize>> = vec![vec![]; max_id + 1];
-    let mut id_to_node: Vec<Option<Rc<RefCell<dyn Source>>>> = vec![None; max_id + 1];
+    let mut id_to_node: Vec<Option<SharedNode>> = vec![None; max_id + 1];
 
     let mut stack: Vec<usize> = vec![]; // For DFS from leaf nodes
     let mut id_to_num_dependencies_satisfied: Vec<u32> = vec![0; max_id + 1];
@@ -80,14 +83,14 @@ mod tests {
     use rand::seq::SliceRandom;
 
     use crate::{
-        context::audio_context::AudioContext,
-        generator::scheduler::build_schedule,
+        context::AudioContext,
+        scheduler::{NodeExecutionSchedule, build_schedule},
         source::{NodeOutput, Source},
     };
 
     #[test]
     fn test_build_schedule_linear() {
-        let mut nodes: Vec<Rc<RefCell<dyn Source>>> = vec![
+        let mut nodes: NodeExecutionSchedule = vec![
             Rc::new(RefCell::new(FloatSource::new(0, 1.))),
             Rc::new(RefCell::new(EchoNode::new(1, 0))),
             Rc::new(RefCell::new(EchoNode::new(2, 1))),
@@ -111,7 +114,7 @@ mod tests {
 
     #[test]
     fn test_build_schedule_branching() {
-        let mut nodes: Vec<Rc<RefCell<dyn Source>>> = vec![
+        let mut nodes: NodeExecutionSchedule = vec![
             Rc::new(RefCell::new(FloatSource::new(0, 1.))),
             Rc::new(RefCell::new(FloatSource::new(1, 1.))),
             Rc::new(RefCell::new(SumNode::new(2, 0, 1))),

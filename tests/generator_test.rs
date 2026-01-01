@@ -1,10 +1,10 @@
 use std::{cell::RefCell, rc::Rc};
 
 use audio_gen::{
-    context::audio_context::AudioContext,
+    context::AudioContext,
     generator::SampleGenerator,
     node::{float::FloatSource, sine_oscillator::SineOscillatorNode, sum::SumNode},
-    source::Source,
+    scheduler::NodeExecutionSchedule,
 };
 
 use test_utils::threshold_eq_float32;
@@ -16,8 +16,7 @@ fn test_basic_graph() {
     let sum_node = Rc::new(RefCell::new(SumNode::new(2, 1, 1)));
 
     let sample_rate = 4.;
-    let nodes: Vec<Rc<RefCell<dyn Source>>> =
-        vec![float_source_node, sine_oscillator_node, sum_node];
+    let nodes: NodeExecutionSchedule = vec![float_source_node, sine_oscillator_node, sum_node];
     let mut generator = SampleGenerator::new(nodes, AudioContext::new(sample_rate)).unwrap();
 
     let num_sets = 100;

@@ -1,5 +1,5 @@
 use crate::{
-    context::audio_context::AudioContext,
+    context::AudioContext,
     source::{NodeOutput, Source},
 };
 use std::f32::consts::PI;

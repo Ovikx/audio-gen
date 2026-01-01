@@ -1,22 +1,19 @@
-use std::{cell::RefCell, io::Error, rc::Rc};
+use std::io::Error;
 
 use crate::{
-    context::audio_context::AudioContext,
-    generator::scheduler::build_schedule,
-    source::{NodeOutput, Source},
+    context::AudioContext,
+    scheduler::{NodeExecutionSchedule, build_schedule},
+    source::NodeOutput,
 };
 
 pub struct SampleGenerator {
     audio_context: AudioContext,
     id_to_output: NodeOutput,
-    schedule: Vec<Rc<RefCell<dyn Source>>>,
+    schedule: NodeExecutionSchedule,
 }
 
 impl SampleGenerator {
-    pub fn new(
-        nodes: Vec<Rc<RefCell<dyn Source>>>,
-        audio_context: AudioContext,
-    ) -> Result<Self, Error> {
+    pub fn new(nodes: NodeExecutionSchedule, audio_context: AudioContext) -> Result<Self, Error> {
         // TODO: We need a renaming pass before we do anything; we should try to make the vectors as small as possible. There might be a case where a user assigns a node an ID of 1<<31 or something
         let max_id: usize = nodes
             .iter()

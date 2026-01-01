@@ -1,5 +1,5 @@
 use crate::{
-    context::audio_context::AudioContext,
+    context::AudioContext,
     math::spline_polynomial::{Point, spline_coefficients},
     source::Source,
 };
@@ -78,45 +78,6 @@ impl Source for SplineFloatNode {
         &self.dependency_ids
     }
 }
-
-// impl Source<f32> for SplineFloatNode {
-//     fn poll(&mut self, audio_context: &AudioContext, timestamp: LogicalTimestamp) -> Option<f32> {
-//         self.frequency_source_id
-//             .borrow_mut()
-//             .poll(audio_context, timestamp)
-//             .map(|f| {
-//                 let mut used_x_value_idx = self.current_x_value_idx;
-//                 let sample: f32;
-
-//                 if used_x_value_idx > 0 && self.current_time <= self.x_values[used_x_value_idx] {
-//                     // A cached index of 0 only appears as the default, so it should not be used
-//                     sample = specific_interpolate(
-//                         self.current_time,
-//                         &self.coefficients,
-//                         used_x_value_idx - 1,
-//                     );
-//                 } else {
-//                     (sample, used_x_value_idx) =
-//                         general_interpolate(self.current_time, &self.x_values, &self.coefficients);
-//                 }
-
-//                 self.current_time += f / audio_context.sample_rate;
-
-//                 // Incrementing the current time could have invalidated the cached x-value index, so we might need to update it
-//                 if self.current_time > self.x_values[used_x_value_idx] {
-//                     self.current_x_value_idx =
-//                         if self.current_x_value_idx == self.x_values.len() - 1 {
-//                             1
-//                         } else {
-//                             self.current_x_value_idx + 1
-//                         };
-//                 }
-
-//                 self.current_time -= 1.0 * self.current_time.floor();
-//                 sample
-//             })
-//     }
-// }
 
 fn general_interpolate(value: f32, x_values: &Vec<f32>, coefficients: &Vec<f32>) -> (f32, usize) {
     assert!(
