@@ -4,7 +4,8 @@ use crate::{
     math::spline_polynomial::Point,
     node::{
         float::FloatSource, multiply::MultiplyNode, saw_oscillator::SawOscillatorNode,
-        sine_oscillator::SineOscillatorNode, spline_float::SplineFloatNode, sum::SumNode,
+        sine_oscillator::SineOscillatorNode, spline_float::SplineFloatNode,
+        square_oscillator::SquareOscillatorNode, sum::SumNode,
     },
     source::Source,
 };
@@ -61,6 +62,17 @@ impl Graph {
         let id = self.current_id;
         self.nodes
             .push(Rc::new(RefCell::new(SineOscillatorNode::new(
+                id,
+                frequency_source_id,
+            ))));
+        self.current_id += 1;
+        id
+    }
+
+    pub fn insert_square_oscillator_node(&mut self, frequency_source_id: usize) -> usize {
+        let id = self.current_id;
+        self.nodes
+            .push(Rc::new(RefCell::new(SquareOscillatorNode::new(
                 id,
                 frequency_source_id,
             ))));
