@@ -31,18 +31,21 @@ impl SampleGenerator {
         })
     }
 
+    pub fn poll(&mut self) -> f32 {
+        for node in &self.schedule {
+            let mut borrowed_node = node.borrow_mut();
+            self.id_to_output[borrowed_node.id()] =
+                borrowed_node.poll(&self.audio_context, &self.id_to_output);
+        }
+
+        let root_sample = self.id_to_output[self.schedule[self.schedule.len() - 1].borrow().id()];
+        root_sample.unwrap_or(0.)
+    }
+
     pub fn batch_poll(&mut self, num_samples: u32) -> Vec<f32> {
         let mut samples = vec![];
         for _ in 0..num_samples {
-            for node in &self.schedule {
-                let mut borrowed_node = node.borrow_mut();
-                self.id_to_output[borrowed_node.id()] =
-                    borrowed_node.poll(&self.audio_context, &self.id_to_output);
-            }
-
-            let root_sample =
-                self.id_to_output[self.schedule[self.schedule.len() - 1].borrow().id()];
-            samples.push(root_sample.unwrap_or(0.));
+            samples.push(self.poll());
         }
         samples
     }
