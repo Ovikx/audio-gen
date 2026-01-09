@@ -4,4 +4,5 @@ pub mod graph;
 pub mod math;
 pub mod node;
 pub mod scheduler;
+pub mod sequencer;
 pub mod source;

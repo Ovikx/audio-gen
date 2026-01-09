@@ -1,3 +1,4 @@
+#[derive(Clone, Copy)]
 pub struct AudioContext {
     pub sample_rate: f32,
 }
