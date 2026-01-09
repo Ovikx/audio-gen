@@ -9,7 +9,6 @@ pub fn build_schedule(
     nodes: NodeExecutionSchedule,
     max_id: usize,
 ) -> Result<NodeExecutionSchedule, Error> {
-    dbg!("max_id ", max_id);
     let mut schedule = vec![];
 
     let mut id_to_dependent_ids: Vec<Vec<usize>> = vec![vec![]; max_id + 1];
