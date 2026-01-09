@@ -97,10 +97,3 @@ fn test_overlapping_sample_aggregation() {
     let sample = sequencer.poll();
     assert!(sample.is_none()); // All generators should have been consumed in the earlier loop
 }
-//             - - - - -
-//           - - - - -
-//         - - - - -
-//       - - - - -
-//     - - - - -
-//   - - - - -
-// - - - - -
