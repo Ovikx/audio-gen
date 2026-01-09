@@ -3,7 +3,7 @@ use std::{cell::RefCell, cmp::max, collections::HashSet, rc::Rc};
 use audio_gen::{
     context::AudioContext,
     generator::SampleGenerator,
-    node::float::FloatSource,
+    node::FloatSource,
     sequencer::{GeneratorInterval, Sequencer},
 };
 use nalgebra::min;

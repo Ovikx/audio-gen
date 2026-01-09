@@ -3,7 +3,7 @@ use std::{cell::RefCell, rc::Rc};
 use audio_gen::{
     context::AudioContext,
     generator::SampleGenerator,
-    node::{float::FloatSource, sine_oscillator::SineOscillatorNode, sum::SumNode},
+    node::{FloatSource, SineOscillatorNode, SumNode},
     scheduler::NodeExecutionSchedule,
 };
 

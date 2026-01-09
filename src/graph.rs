@@ -3,9 +3,8 @@ use std::{cell::RefCell, rc::Rc};
 use crate::{
     math::spline_polynomial::Point,
     node::{
-        float::FloatSource, multiply::MultiplyNode, saw_oscillator::SawOscillatorNode,
-        sine_oscillator::SineOscillatorNode, spline_float::SplineFloatNode,
-        square_oscillator::SquareOscillatorNode, sum::SumNode,
+        FloatSource, MultiplyNode, SawOscillatorNode, SineOscillatorNode, SplineFloatNode,
+        SquareOscillatorNode, SumNode,
     },
     source::Source,
 };
