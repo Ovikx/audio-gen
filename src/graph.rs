@@ -1,10 +1,11 @@
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
+    input_buffer::SharedExternalInputBuffer,
     math::spline_polynomial::Point,
     node::{
-        FloatSource, MultiplyNode, SawOscillatorNode, SineOscillatorNode, SplineFloatNode,
-        SquareOscillatorNode, SumNode,
+        ExternalFloatNode, FloatSource, MultiplyNode, SawOscillatorNode, SineOscillatorNode,
+        SplineFloatNode, SquareOscillatorNode, SumNode,
     },
     source::Source,
 };
@@ -28,6 +29,21 @@ impl Graph {
         let id = self.current_id;
         self.nodes
             .push(Rc::new(RefCell::new(FloatSource::new(id, value))));
+        self.current_id += 1;
+        id
+    }
+
+    pub fn insert_external_float_node(
+        &mut self,
+        input_buffer: SharedExternalInputBuffer,
+        input_buffer_index: usize,
+    ) -> usize {
+        let id = self.current_id;
+        self.nodes.push(Rc::new(RefCell::new(ExternalFloatNode::new(
+            id,
+            input_buffer,
+            input_buffer_index,
+        ))));
         self.current_id += 1;
         id
     }

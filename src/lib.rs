@@ -1,6 +1,7 @@
 pub mod context;
 pub mod generator;
 pub mod graph;
+pub mod input_buffer;
 pub mod math;
 pub mod node;
 pub mod scheduler;

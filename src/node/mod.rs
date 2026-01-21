@@ -1,3 +1,4 @@
+mod external_float;
 mod float;
 mod multiply;
 mod saw_oscillator;
@@ -6,6 +7,7 @@ mod spline_float;
 mod square_oscillator;
 mod sum;
 
+pub use external_float::ExternalFloatNode;
 pub use float::FloatSource;
 pub use multiply::MultiplyNode;
 pub use saw_oscillator::SawOscillatorNode;
