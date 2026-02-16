@@ -28,7 +28,7 @@ impl ExternalFloatNode {
 
 impl Source for ExternalFloatNode {
     fn poll(&mut self, _audio_context: &AudioContext, _id_to_output: &NodeOutput) -> Option<f32> {
-        Some(self.input_buffer.borrow().f32[self.input_buffer_index])
+        Some(self.input_buffer.lock().unwrap().f32[self.input_buffer_index])
     }
 
     fn id(&self) -> usize {

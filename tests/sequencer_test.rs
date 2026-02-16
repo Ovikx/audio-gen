@@ -1,4 +1,9 @@
-use std::{cell::RefCell, cmp::max, collections::HashSet, rc::Rc};
+use std::{
+    cell::RefCell,
+    cmp::max,
+    collections::HashSet,
+    sync::{Arc, Mutex},
+};
 
 use audio_gen::{
     context::AudioContext,
@@ -19,7 +24,7 @@ fn test_non_overlapping_sample_existence() {
 
     for i in 0..NUM_GENERATORS {
         let generator = SampleGenerator::new(
-            vec![Rc::new(RefCell::new(FloatSource::new(0, FLOAT_VALUE)))],
+            vec![Arc::new(Mutex::new(FloatSource::new(0, FLOAT_VALUE)))],
             AudioContext::new(1.),
         )
         .unwrap();
@@ -61,7 +66,7 @@ fn test_overlapping_sample_aggregation() {
 
     for i in 0..NUM_GENERATORS {
         let generator = SampleGenerator::new(
-            vec![Rc::new(RefCell::new(FloatSource::new(0, FLOAT_VALUE)))],
+            vec![Arc::new(Mutex::new(FloatSource::new(0, FLOAT_VALUE)))],
             AudioContext::new(1.),
         )
         .unwrap();

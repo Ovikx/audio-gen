@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc};
+use std::sync::{Arc, Mutex};
 
 use audio_gen::{
     context::AudioContext, generator::SampleGenerator, graph, input_buffer::ExternalInputBuffer,
@@ -12,14 +12,16 @@ fn test_external_float_mutation() {
     const NUM_SAMPLES: usize = 100;
 
     let mut graph = graph::Graph::new();
-    let input_buffer = Rc::new(RefCell::new(ExternalInputBuffer::new(1)));
+    let input_buffer: Arc<Mutex<ExternalInputBuffer>> =
+        Arc::new(Mutex::new(ExternalInputBuffer::new(1)));
     graph.insert_external_float_node(input_buffer.clone(), INPUT_BUFFER_INDEX);
     let mut generator = SampleGenerator::new(graph.nodes(), AudioContext::new(1.)).unwrap();
 
     let samples: Vec<f32> = (0..NUM_SAMPLES)
         .map(|i| {
             input_buffer
-                .borrow_mut()
+                .lock()
+                .unwrap()
                 .update_f32(INPUT_BUFFER_INDEX, i as f32)
                 .unwrap();
             generator.poll()

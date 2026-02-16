@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc};
+use std::sync::{Arc, Mutex};
 
 use crate::{
     input_buffer::SharedExternalInputBuffer,
@@ -7,14 +7,14 @@ use crate::{
         ExternalFloatNode, FloatSource, MultiplyNode, SawOscillatorNode, SineOscillatorNode,
         SplineFloatNode, SquareOscillatorNode, SumNode,
     },
-    source::Source,
+    scheduler::SharedNode,
 };
 
 pub trait SerializableNode {}
 
 pub struct Graph {
     current_id: usize,
-    nodes: Vec<Rc<RefCell<dyn Source>>>,
+    nodes: Vec<SharedNode>,
 }
 
 impl Graph {
@@ -28,7 +28,7 @@ impl Graph {
     pub fn insert_float_node(&mut self, value: f32) -> usize {
         let id = self.current_id;
         self.nodes
-            .push(Rc::new(RefCell::new(FloatSource::new(id, value))));
+            .push(Arc::new(Mutex::new(FloatSource::new(id, value))));
         self.current_id += 1;
         id
     }
@@ -39,7 +39,7 @@ impl Graph {
         input_buffer_index: usize,
     ) -> usize {
         let id = self.current_id;
-        self.nodes.push(Rc::new(RefCell::new(ExternalFloatNode::new(
+        self.nodes.push(Arc::new(Mutex::new(ExternalFloatNode::new(
             id,
             input_buffer,
             input_buffer_index,
@@ -54,7 +54,7 @@ impl Graph {
         multiplier_source_id: usize,
     ) -> usize {
         let id = self.current_id;
-        self.nodes.push(Rc::new(RefCell::new(MultiplyNode::new(
+        self.nodes.push(Arc::new(Mutex::new(MultiplyNode::new(
             id,
             multiplicand_source_id,
             multiplier_source_id,
@@ -65,7 +65,7 @@ impl Graph {
 
     pub fn insert_saw_oscillator_node(&mut self, frequency_source_id: usize) -> usize {
         let id = self.current_id;
-        self.nodes.push(Rc::new(RefCell::new(SawOscillatorNode::new(
+        self.nodes.push(Arc::new(Mutex::new(SawOscillatorNode::new(
             id,
             frequency_source_id,
         ))));
@@ -75,11 +75,10 @@ impl Graph {
 
     pub fn insert_sine_oscillator_node(&mut self, frequency_source_id: usize) -> usize {
         let id = self.current_id;
-        self.nodes
-            .push(Rc::new(RefCell::new(SineOscillatorNode::new(
-                id,
-                frequency_source_id,
-            ))));
+        self.nodes.push(Arc::new(Mutex::new(SineOscillatorNode::new(
+            id,
+            frequency_source_id,
+        ))));
         self.current_id += 1;
         id
     }
@@ -87,7 +86,7 @@ impl Graph {
     pub fn insert_square_oscillator_node(&mut self, frequency_source_id: usize) -> usize {
         let id = self.current_id;
         self.nodes
-            .push(Rc::new(RefCell::new(SquareOscillatorNode::new(
+            .push(Arc::new(Mutex::new(SquareOscillatorNode::new(
                 id,
                 frequency_source_id,
             ))));
@@ -101,7 +100,7 @@ impl Graph {
         points: Vec<Point>,
     ) -> usize {
         let id = self.current_id;
-        self.nodes.push(Rc::new(RefCell::new(SplineFloatNode::new(
+        self.nodes.push(Arc::new(Mutex::new(SplineFloatNode::new(
             id,
             frequency_source_id,
             points,
@@ -112,7 +111,7 @@ impl Graph {
 
     pub fn insert_sum_node(&mut self, augend_source_id: usize, addend_source_id: usize) -> usize {
         let id = self.current_id;
-        self.nodes.push(Rc::new(RefCell::new(SumNode::new(
+        self.nodes.push(Arc::new(Mutex::new(SumNode::new(
             id,
             augend_source_id,
             addend_source_id,
@@ -121,7 +120,7 @@ impl Graph {
         id
     }
 
-    pub fn nodes(&self) -> Vec<Rc<RefCell<dyn Source>>> {
+    pub fn nodes(&self) -> Vec<SharedNode> {
         self.nodes.clone()
     }
 }

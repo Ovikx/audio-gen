@@ -1,8 +1,11 @@
-use std::{cell::RefCell, io::Error, rc::Rc};
+use std::{
+    io::Error,
+    sync::{Arc, Mutex},
+};
 
 use crate::source::Source;
 
-pub type SharedNode = Rc<RefCell<dyn Source>>;
+pub type SharedNode = Arc<Mutex<dyn Source>>;
 pub type NodeExecutionSchedule = Vec<SharedNode>;
 
 pub fn build_schedule(
@@ -18,7 +21,7 @@ pub fn build_schedule(
     let mut id_to_num_dependencies_satisfied: Vec<u32> = vec![0; max_id + 1];
 
     for node in nodes {
-        let borrowed_node = node.borrow();
+        let borrowed_node = node.lock().unwrap();
         id_to_node[borrowed_node.id()] = Some(node.clone());
 
         let dependency_ids = borrowed_node.dependency_ids();
@@ -63,7 +66,8 @@ pub fn build_schedule(
                         std::io::ErrorKind::Other,
                         format!("no dependent node available with id {}", *dependent_id),
                     ))?
-                    .borrow()
+                    .lock()
+                    .unwrap()
                     .dependency_ids()
                     .len()
             {
@@ -77,7 +81,7 @@ pub fn build_schedule(
 
 #[cfg(test)]
 mod tests {
-    use std::{cell::RefCell, rc::Rc};
+    use std::sync::{Arc, Mutex};
 
     use rand::seq::SliceRandom;
 
@@ -90,10 +94,10 @@ mod tests {
     #[test]
     fn test_build_schedule_linear() {
         let mut nodes: NodeExecutionSchedule = vec![
-            Rc::new(RefCell::new(FloatSource::new(0, 1.))),
-            Rc::new(RefCell::new(EchoNode::new(1, 0))),
-            Rc::new(RefCell::new(EchoNode::new(2, 1))),
-            Rc::new(RefCell::new(EchoNode::new(3, 2))),
+            Arc::new(Mutex::new(FloatSource::new(0, 1.))),
+            Arc::new(Mutex::new(EchoNode::new(1, 0))),
+            Arc::new(Mutex::new(EchoNode::new(2, 1))),
+            Arc::new(Mutex::new(EchoNode::new(3, 2))),
         ];
 
         let mut rng = rand::rng();
@@ -102,11 +106,11 @@ mod tests {
         let expected_id_order: Vec<usize> = vec![0, 1, 2, 3];
         for (idx, node) in schedule.iter().enumerate() {
             assert_eq!(
-                node.borrow().id(),
+                node.lock().unwrap().id(),
                 expected_id_order[idx],
                 "expected id {}, got {}",
                 expected_id_order[idx],
-                node.borrow().id()
+                node.lock().unwrap().id()
             );
         }
     }
@@ -114,19 +118,22 @@ mod tests {
     #[test]
     fn test_build_schedule_branching() {
         let mut nodes: NodeExecutionSchedule = vec![
-            Rc::new(RefCell::new(FloatSource::new(0, 1.))),
-            Rc::new(RefCell::new(FloatSource::new(1, 1.))),
-            Rc::new(RefCell::new(SumNode::new(2, 0, 1))),
-            Rc::new(RefCell::new(EchoNode::new(3, 2))),
-            Rc::new(RefCell::new(EchoNode::new(4, 3))),
-            Rc::new(RefCell::new(SumNode::new(5, 4, 2))),
+            Arc::new(Mutex::new(FloatSource::new(0, 1.))),
+            Arc::new(Mutex::new(FloatSource::new(1, 1.))),
+            Arc::new(Mutex::new(SumNode::new(2, 0, 1))),
+            Arc::new(Mutex::new(EchoNode::new(3, 2))),
+            Arc::new(Mutex::new(EchoNode::new(4, 3))),
+            Arc::new(Mutex::new(SumNode::new(5, 4, 2))),
         ];
 
         let mut rng = rand::rng();
         nodes.shuffle(&mut rng);
 
         let schedule = build_schedule(nodes, 5).unwrap();
-        let actual_id_order: Vec<usize> = schedule.iter().map(|node| node.borrow().id()).collect();
+        let actual_id_order: Vec<usize> = schedule
+            .iter()
+            .map(|node| node.lock().unwrap().id())
+            .collect();
 
         // There are two valid orders since nodes 0 and 1 don't depend on each other
         let expected_id_order_1: Vec<usize> = vec![0, 1, 2, 3, 4, 5];

@@ -1,4 +1,7 @@
-use std::{cell::RefCell, io::Error, rc::Rc};
+use std::{
+    io::Error,
+    sync::{Arc, Mutex},
+};
 
 const INPUT_BUFFER_ROW_SIZE: usize = 1 << 8;
 
@@ -8,7 +11,7 @@ pub struct ExternalInputBuffer {
     pub u32: Vec<u32>,
 }
 
-pub type SharedExternalInputBuffer = Rc<RefCell<ExternalInputBuffer>>;
+pub type SharedExternalInputBuffer = Arc<Mutex<ExternalInputBuffer>>;
 
 impl ExternalInputBuffer {
     pub fn new(buffer_size: usize) -> Self {
@@ -19,8 +22,8 @@ impl ExternalInputBuffer {
         }
     }
 
-    pub fn new_shared(buffer_size: usize) -> Rc<RefCell<Self>> {
-        Rc::new(RefCell::new(ExternalInputBuffer::new(buffer_size)))
+    pub fn new_shared(buffer_size: usize) -> Arc<Mutex<Self>> {
+        Arc::new(Mutex::new(ExternalInputBuffer::new(buffer_size)))
     }
 
     pub fn update_bool(&mut self, index: usize, new_value: bool) -> Result<(), Error> {

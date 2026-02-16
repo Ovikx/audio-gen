@@ -17,7 +17,7 @@ impl SampleGenerator {
         // TODO: We need a renaming pass before we do anything; we should try to make the vectors as small as possible. There might be a case where a user assigns a node an ID of 1<<31 or something
         let max_id: usize = nodes
             .iter()
-            .map(|node| node.borrow().id())
+            .map(|node| node.lock().unwrap().id())
             .max()
             .ok_or(Error::new(std::io::ErrorKind::Other, "empty node vector"))?;
 
@@ -33,12 +33,13 @@ impl SampleGenerator {
 
     pub fn poll(&mut self) -> f32 {
         for node in &self.schedule {
-            let mut borrowed_node = node.borrow_mut();
+            let mut borrowed_node = node.lock().unwrap();
             self.id_to_output[borrowed_node.id()] =
                 borrowed_node.poll(&self.audio_context, &self.id_to_output);
         }
 
-        let root_sample = self.id_to_output[self.schedule[self.schedule.len() - 1].borrow().id()];
+        let root_sample =
+            self.id_to_output[self.schedule[self.schedule.len() - 1].lock().unwrap().id()];
         root_sample.unwrap_or(0.)
     }
 
