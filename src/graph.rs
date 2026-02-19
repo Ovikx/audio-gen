@@ -25,7 +25,7 @@ impl Graph {
         }
     }
 
-    pub fn insert_float_node(&mut self, value: f32) -> usize {
+    pub fn float_node(&mut self, value: f32) -> usize {
         let id = self.current_id;
         self.nodes
             .push(Arc::new(Mutex::new(FloatSource::new(id, value))));
@@ -33,7 +33,7 @@ impl Graph {
         id
     }
 
-    pub fn insert_external_float_node(
+    pub fn external_float_node(
         &mut self,
         input_buffer: SharedExternalInputBuffer,
         input_buffer_index: usize,
@@ -48,7 +48,7 @@ impl Graph {
         id
     }
 
-    pub fn insert_multiply_node(
+    pub fn multiply_node(
         &mut self,
         multiplicand_source_id: usize,
         multiplier_source_id: usize,
@@ -63,7 +63,7 @@ impl Graph {
         id
     }
 
-    pub fn insert_saw_oscillator_node(&mut self, frequency_source_id: usize) -> usize {
+    pub fn saw_oscillator_node(&mut self, frequency_source_id: usize) -> usize {
         let id = self.current_id;
         self.nodes.push(Arc::new(Mutex::new(SawOscillatorNode::new(
             id,
@@ -73,7 +73,7 @@ impl Graph {
         id
     }
 
-    pub fn insert_sine_oscillator_node(&mut self, frequency_source_id: usize) -> usize {
+    pub fn sine_oscillator_node(&mut self, frequency_source_id: usize) -> usize {
         let id = self.current_id;
         self.nodes.push(Arc::new(Mutex::new(SineOscillatorNode::new(
             id,
@@ -83,7 +83,7 @@ impl Graph {
         id
     }
 
-    pub fn insert_square_oscillator_node(&mut self, frequency_source_id: usize) -> usize {
+    pub fn square_oscillator_node(&mut self, frequency_source_id: usize) -> usize {
         let id = self.current_id;
         self.nodes
             .push(Arc::new(Mutex::new(SquareOscillatorNode::new(
@@ -94,11 +94,7 @@ impl Graph {
         id
     }
 
-    pub fn insert_spline_float_node(
-        &mut self,
-        frequency_source_id: usize,
-        points: Vec<Point>,
-    ) -> usize {
+    pub fn spline_float_node(&mut self, frequency_source_id: usize, points: Vec<Point>) -> usize {
         let id = self.current_id;
         self.nodes.push(Arc::new(Mutex::new(SplineFloatNode::new(
             id,
@@ -109,7 +105,7 @@ impl Graph {
         id
     }
 
-    pub fn insert_sum_node(&mut self, augend_source_id: usize, addend_source_id: usize) -> usize {
+    pub fn sum_node(&mut self, augend_source_id: usize, addend_source_id: usize) -> usize {
         let id = self.current_id;
         self.nodes.push(Arc::new(Mutex::new(SumNode::new(
             id,

@@ -14,7 +14,7 @@ fn test_external_float_mutation() {
     let mut graph = graph::Graph::new();
     let input_buffer: Arc<Mutex<ExternalInputBuffer>> =
         Arc::new(Mutex::new(ExternalInputBuffer::new(1)));
-    graph.insert_external_float_node(input_buffer.clone(), INPUT_BUFFER_INDEX);
+    graph.external_float_node(input_buffer.clone(), INPUT_BUFFER_INDEX);
     let mut generator = SampleGenerator::new(graph.nodes(), AudioContext::new(1.)).unwrap();
 
     let samples: Vec<f32> = (0..NUM_SAMPLES)

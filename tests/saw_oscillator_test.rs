@@ -5,8 +5,8 @@ use test_utils::threshold_eq_float32;
 #[test]
 fn test_saw_oscillator_node_sequence() {
     let mut graph = graph::Graph::new();
-    let float_node_id = graph.insert_float_node(1.);
-    graph.insert_saw_oscillator_node(float_node_id);
+    let float_node_id = graph.float_node(1.);
+    graph.saw_oscillator_node(float_node_id);
 
     let sample_rate = 4.;
     let mut generator =

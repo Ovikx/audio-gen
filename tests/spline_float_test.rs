@@ -5,8 +5,8 @@ use test_utils::threshold_eq_float32;
 #[test]
 fn test_spline_node_sequence() {
     let mut graph = graph::Graph::new();
-    let float_node_id = graph.insert_float_node(1.);
-    graph.insert_spline_float_node(float_node_id, vec![(0.0, 0.0), (1.0, 1.0)]);
+    let float_node_id = graph.float_node(1.);
+    graph.spline_float_node(float_node_id, vec![(0.0, 0.0), (1.0, 1.0)]);
 
     let sample_rate = 4.;
     let mut generator =
