@@ -1,9 +1,9 @@
-use std::io::Error;
+use std::{io::Error, sync::MutexGuard};
 
 use crate::{
     context::AudioContext,
     scheduler::{NodeExecutionSchedule, build_schedule},
-    source::NodeOutput,
+    source::{NodeOutput, Source},
 };
 
 pub struct SampleGenerator {
@@ -44,10 +44,23 @@ impl SampleGenerator {
     }
 
     pub fn batch_poll(&mut self, num_samples: u32) -> Vec<f32> {
+        let mut guarded_nodes: Vec<MutexGuard<dyn Source + 'static>> = self
+            .schedule
+            .iter()
+            .map(|node| node.lock().unwrap())
+            .collect();
+
         let mut samples = vec![];
         for _ in 0..num_samples {
-            samples.push(self.poll());
+            for guarded_node in guarded_nodes.iter_mut() {
+                self.id_to_output[guarded_node.id()] =
+                    guarded_node.poll(&self.audio_context, &self.id_to_output);
+            }
+
+            let root_sample = self.id_to_output[guarded_nodes[guarded_nodes.len() - 1].id()];
+            samples.push(root_sample.unwrap_or(0.));
         }
+
         samples
     }
 }
