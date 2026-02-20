@@ -4,10 +4,11 @@ use crate::{
     input_buffer::SharedExternalInputBuffer,
     math::spline_polynomial::Point,
     node::{
-        ExternalFloatNode, FloatSource, MultiplyNode, SawOscillatorNode, SineOscillatorNode,
-        SplineFloatNode, SquareOscillatorNode, SumNode,
+        ExternalFloatNode, FloatSource, MultiplyNode, SawOscillatorNode, SequenceNode,
+        SineOscillatorNode, SplineFloatNode, SquareOscillatorNode, SumNode,
     },
     scheduler::SharedNode,
+    sequencer::Sequencer,
 };
 
 pub trait SerializableNode {}
@@ -112,6 +113,14 @@ impl Graph {
             augend_source_id,
             addend_source_id,
         ))));
+        self.current_id += 1;
+        id
+    }
+
+    pub fn sequence_node(&mut self, sequencer: Arc<Mutex<Sequencer>>) -> usize {
+        let id = self.current_id;
+        self.nodes
+            .push(Arc::new(Mutex::new(SequenceNode::new(id, sequencer))));
         self.current_id += 1;
         id
     }
