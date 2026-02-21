@@ -14,26 +14,16 @@ fn test_saw_oscillator_node_sequence() {
 
     let num_sets = 100;
     let samples = generator.batch_poll(4 * num_sets + 1);
-    let expected_samples: Vec<f32> = vec![0.5, 0.0, -0.5, 0.0]; // Index 1 is a discontinuity, so that value is not used for validation
-    assert!(threshold_eq_float32(samples[0], 0.));
+    let expected_samples: Vec<f32> = vec![-1.0, -0.5, 0.0, 0.5]; // Index 1 is a discontinuity, so that value is not used for validation
     dbg!(&samples);
-    for i in 1..num_sets * 4 {
-        if (i - 1) % 4 == 1 {
-            assert!(
-                threshold_eq_float32(samples[i as usize], 1.0)
-                    || threshold_eq_float32(samples[i as usize], -1.0)
-            );
-            continue;
-        }
-        assert!(
-            threshold_eq_float32(
-                samples[i as usize],
-                expected_samples[(((i - 1) as u32) % 4) as usize]
-            ),
-            "expected {}, got {} at index {}",
-            expected_samples[(((i - 1) as u32) % 4) as usize],
+    for i in 0..num_sets * 4 {
+        dbg!(
             samples[i as usize],
-            i
+            expected_samples[((i as u32) % 4) as usize]
         );
+        assert!(threshold_eq_float32(
+            samples[i as usize],
+            expected_samples[((i as u32) % 4) as usize]
+        ));
     }
 }
