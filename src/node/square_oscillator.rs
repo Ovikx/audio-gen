@@ -31,7 +31,7 @@ impl Source for SquareOscillatorNode {
                 sample = -1.;
             }
             self.current_time += f / audio_context.sample_rate;
-            self.current_time -= 1.0 * self.current_time.floor();
+            self.current_time = self.current_time.fract();
             sample
         })
     }
