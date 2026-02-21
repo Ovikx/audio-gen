@@ -7,7 +7,7 @@ pub struct SawOscillatorNode {
     id: usize,
     frequency_source_id: usize,
     dependency_ids: Vec<usize>,
-    current_time: f32,
+    phase: f32,
 }
 
 impl SawOscillatorNode {
@@ -16,7 +16,7 @@ impl SawOscillatorNode {
             id,
             frequency_source_id,
             dependency_ids: vec![frequency_source_id],
-            current_time: 0.,
+            phase: 0.,
         }
     }
 }
@@ -24,13 +24,9 @@ impl SawOscillatorNode {
 impl Source for SawOscillatorNode {
     fn poll(&mut self, audio_context: &AudioContext, id_to_output: &NodeOutput) -> Option<f32> {
         id_to_output[self.frequency_source_id].map(|f| {
-            let sample = 2.0
-                * (f * self.current_time / audio_context.sample_rate
-                    - (0.5 + f * self.current_time / audio_context.sample_rate).floor());
-            self.current_time += 1.0;
-            if self.current_time >= audio_context.sample_rate / f {
-                self.current_time -= (audio_context.sample_rate / f).floor();
-            }
+            let sample = 2.0 * self.phase - 1.0;
+            self.phase += f / audio_context.sample_rate;
+            self.phase = self.phase.fract();
             sample
         })
     }
