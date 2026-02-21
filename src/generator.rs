@@ -1,10 +1,12 @@
-use std::{io::Error, sync::MutexGuard};
+use std::sync::MutexGuard;
 
 use crate::{
     context::AudioContext,
     scheduler::{NodeExecutionSchedule, build_schedule},
     source::{NodeOutput, Source},
 };
+
+use anyhow::anyhow;
 
 pub struct SampleGenerator {
     audio_context: AudioContext,
@@ -13,13 +15,16 @@ pub struct SampleGenerator {
 }
 
 impl SampleGenerator {
-    pub fn new(nodes: NodeExecutionSchedule, audio_context: AudioContext) -> Result<Self, Error> {
+    pub fn new(
+        nodes: NodeExecutionSchedule,
+        audio_context: AudioContext,
+    ) -> Result<Self, anyhow::Error> {
         // TODO: We need a renaming pass before we do anything; we should try to make the vectors as small as possible. There might be a case where a user assigns a node an ID of 1<<31 or something
         let max_id: usize = nodes
             .iter()
             .map(|node| node.lock().unwrap().id())
             .max()
-            .ok_or(Error::new(std::io::ErrorKind::Other, "empty node vector"))?;
+            .ok_or(anyhow!("empty node vector"))?;
 
         let id_to_output = vec![None; max_id + 1];
 

@@ -1,7 +1,6 @@
-use std::{
-    io::Error,
-    sync::{Arc, Mutex},
-};
+use std::sync::{Arc, Mutex};
+
+use anyhow::{anyhow, bail};
 
 use crate::source::Source;
 
@@ -11,7 +10,7 @@ pub type NodeExecutionSchedule = Vec<SharedNode>;
 pub fn build_schedule(
     nodes: NodeExecutionSchedule,
     max_id: usize,
-) -> Result<NodeExecutionSchedule, Error> {
+) -> Result<NodeExecutionSchedule, anyhow::Error> {
     let mut schedule = vec![];
 
     let mut id_to_dependent_ids: Vec<Vec<usize>> = vec![vec![]; max_id + 1];
@@ -38,22 +37,19 @@ pub fn build_schedule(
 
     // Graph must have leaves
     if stack.len() == 0 {
-        return Err(Error::new(
-            std::io::ErrorKind::Other,
-            "graph must have leaves as a starting point for scheduling",
-        ));
+        bail!("graph must have leaves as a starting point for scheduling")
     }
 
     while stack.len() > 0 {
-        let popped_id = stack.pop().ok_or(Error::new(
-            std::io::ErrorKind::Other,
-            "attempted to pop from empty stack",
-        ))?;
+        let popped_id = stack
+            .pop()
+            .ok_or(anyhow!("attempted to pop from empty stack"))?;
 
-        schedule.push(id_to_node[popped_id].clone().ok_or(Error::new(
-            std::io::ErrorKind::Other,
-            format!("no node available with id {}", popped_id),
-        ))?);
+        schedule.push(
+            id_to_node[popped_id]
+                .clone()
+                .ok_or(anyhow!("no node available with id {}", popped_id))?,
+        );
 
         for dependent_id in &id_to_dependent_ids[popped_id] {
             id_to_num_dependencies_satisfied[*dependent_id] += 1;
@@ -62,9 +58,9 @@ pub fn build_schedule(
             if id_to_num_dependencies_satisfied[*dependent_id] as usize
                 == id_to_node[*dependent_id]
                     .clone()
-                    .ok_or(Error::new(
-                        std::io::ErrorKind::Other,
-                        format!("no dependent node available with id {}", *dependent_id),
+                    .ok_or(anyhow!(
+                        "no dependent node available with id {}",
+                        *dependent_id
                     ))?
                     .lock()
                     .unwrap()

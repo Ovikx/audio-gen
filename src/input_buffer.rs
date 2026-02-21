@@ -1,7 +1,6 @@
-use std::{
-    io::Error,
-    sync::{Arc, Mutex},
-};
+use std::sync::{Arc, Mutex};
+
+use anyhow::bail;
 
 const INPUT_BUFFER_ROW_SIZE: usize = 1 << 8;
 
@@ -26,45 +25,33 @@ impl ExternalInputBuffer {
         Arc::new(Mutex::new(ExternalInputBuffer::new(buffer_size)))
     }
 
-    pub fn update_bool(&mut self, index: usize, new_value: bool) -> Result<(), Error> {
+    pub fn update_bool(&mut self, index: usize, new_value: bool) -> Result<(), anyhow::Error> {
         if index >= INPUT_BUFFER_ROW_SIZE {
-            return Err(Error::new(
-                std::io::ErrorKind::Other,
-                format!(
-                    "requested index {} is out of bounds for buffer size {}",
-                    index, INPUT_BUFFER_ROW_SIZE
-                ),
-            ));
+            bail!(
+                "requested index {index} is out of bounds for buffer size {INPUT_BUFFER_ROW_SIZE}"
+            )
         }
 
         self.bool[index] = new_value;
         Ok(())
     }
 
-    pub fn update_f32(&mut self, index: usize, new_value: f32) -> Result<(), Error> {
+    pub fn update_f32(&mut self, index: usize, new_value: f32) -> Result<(), anyhow::Error> {
         if index >= INPUT_BUFFER_ROW_SIZE {
-            return Err(Error::new(
-                std::io::ErrorKind::Other,
-                format!(
-                    "requested index {} is out of bounds for buffer size {}",
-                    index, INPUT_BUFFER_ROW_SIZE
-                ),
-            ));
+            bail!(
+                "requested index {index} is out of bounds for buffer size {INPUT_BUFFER_ROW_SIZE}"
+            )
         }
 
         self.f32[index] = new_value;
         Ok(())
     }
 
-    pub fn update_u32(&mut self, index: usize, new_value: u32) -> Result<(), Error> {
+    pub fn update_u32(&mut self, index: usize, new_value: u32) -> Result<(), anyhow::Error> {
         if index >= INPUT_BUFFER_ROW_SIZE {
-            return Err(Error::new(
-                std::io::ErrorKind::Other,
-                format!(
-                    "requested index {} is out of bounds for buffer size {}",
-                    index, INPUT_BUFFER_ROW_SIZE
-                ),
-            ));
+            bail!(
+                "requested index {index} is out of bounds for buffer size {INPUT_BUFFER_ROW_SIZE}"
+            )
         }
 
         self.u32[index] = new_value;
