@@ -117,7 +117,7 @@ impl Graph {
         id
     }
 
-    pub fn sequence_node(&mut self, sequencer: Arc<Mutex<Sequencer>>) -> usize {
+    pub fn sequence_node(&mut self, sequencer: Sequencer) -> usize {
         let id = self.current_id;
         self.nodes
             .push(Arc::new(Mutex::new(SequenceNode::new(id, sequencer))));

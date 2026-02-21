@@ -7,12 +7,12 @@ use crate::{sequencer::Sequencer, source::Source};
 /// implement `Source`. This node makes it possible to do so.
 pub struct SequenceNode {
     id: usize,
-    sequencer: Arc<Mutex<Sequencer>>,
+    sequencer: Sequencer,
     dependency_ids: Vec<usize>,
 }
 
 impl SequenceNode {
-    pub fn new(id: usize, sequencer: Arc<Mutex<Sequencer>>) -> Self {
+    pub fn new(id: usize, sequencer: Sequencer) -> Self {
         SequenceNode {
             id,
             sequencer,
@@ -27,7 +27,7 @@ impl Source for SequenceNode {
         _audio_context: &crate::context::AudioContext,
         _id_to_output: &crate::source::NodeOutput,
     ) -> Option<f32> {
-        self.sequencer.lock().unwrap().poll()
+        self.sequencer.poll()
     }
 
     fn id(&self) -> usize {

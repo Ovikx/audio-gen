@@ -35,7 +35,7 @@ fn test_overlapping_sample_aggregation() {
 
     let sequencer = Sequencer::new(generator_intervals);
     let mut master_graph = Graph::new();
-    let sequence_node_id = master_graph.sequence_node(Arc::new(Mutex::new(sequencer)));
+    let sequence_node_id = master_graph.sequence_node(sequencer);
     let multiplier_id = master_graph.float_node(2.);
     master_graph.multiply_node(sequence_node_id, multiplier_id);
 
