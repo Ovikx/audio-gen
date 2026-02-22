@@ -19,7 +19,7 @@ pub fn build_schedule(
     let mut stack: Vec<usize> = vec![]; // For DFS from leaf nodes
     let mut id_to_num_dependencies_satisfied: Vec<u32> = vec![0; max_id + 1];
 
-    for node in nodes {
+    for node in &nodes {
         let borrowed_node = node.lock().unwrap();
         id_to_node[borrowed_node.id()] = Some(node.clone());
 
@@ -70,6 +70,14 @@ pub fn build_schedule(
                 stack.push(*dependent_id);
             }
         }
+    }
+
+    if schedule.len() != nodes.len() {
+        bail!(
+            "not all nodes were scheduled. received {} nodes, scheduled only {}",
+            nodes.len(),
+            schedule.len()
+        );
     }
 
     Ok(schedule)
@@ -142,6 +150,18 @@ mod tests {
             expected_id_order_2,
             actual_id_order
         );
+    }
+
+    #[test]
+    fn test_error_on_cycle() {
+        let nodes: NodeExecutionSchedule = vec![
+            Arc::new(Mutex::new(FloatSource::new(0, 1.))),
+            Arc::new(Mutex::new(SumNode::new(1, 0, 2))),
+            Arc::new(Mutex::new(EchoNode::new(2, 1))),
+        ];
+
+        let schedule = build_schedule(nodes, 2);
+        assert!(schedule.is_err());
     }
 
     pub struct FloatSource {
