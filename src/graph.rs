@@ -5,10 +5,9 @@ use crate::{
     math::spline_polynomial::Point,
     node::{
         ExternalFloatNode, FloatSource, MultiplyNode, SawOscillatorNode, SequenceNode,
-        SineOscillatorNode, SplineFloatNode, SquareOscillatorNode, SumNode,
+        SineOscillatorNode, SourceInterval, SplineFloatNode, SquareOscillatorNode, SumNode,
     },
     scheduler::SharedNode,
-    sequencer::Sequencer,
 };
 
 pub trait SerializableNode {}
@@ -117,10 +116,12 @@ impl Graph {
         id
     }
 
-    pub fn sequence_node(&mut self, sequencer: Sequencer) -> usize {
+    pub fn sequence_node(&mut self, source_intervals: Vec<SourceInterval>) -> usize {
         let id = self.current_id;
-        self.nodes
-            .push(Arc::new(Mutex::new(SequenceNode::new(id, sequencer))));
+        self.nodes.push(Arc::new(Mutex::new(SequenceNode::new(
+            id,
+            source_intervals,
+        ))));
         self.current_id += 1;
         id
     }

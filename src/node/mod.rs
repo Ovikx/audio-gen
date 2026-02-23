@@ -12,7 +12,7 @@ pub use external_float::ExternalFloatNode;
 pub use float::FloatSource;
 pub use multiply::MultiplyNode;
 pub use saw_oscillator::SawOscillatorNode;
-pub use sequence::SequenceNode;
+pub use sequence::{SequenceNode, SourceInterval};
 pub use sine_oscillator::SineOscillatorNode;
 pub use spline_float::SplineFloatNode;
 pub use square_oscillator::SquareOscillatorNode;
