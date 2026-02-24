@@ -1,6 +1,7 @@
 mod external_float;
 mod float;
 mod multiply;
+mod noise;
 mod saw_oscillator;
 mod sequence;
 mod sine_oscillator;
@@ -11,6 +12,7 @@ mod sum;
 pub use external_float::ExternalFloatNode;
 pub use float::FloatSource;
 pub use multiply::MultiplyNode;
+pub use noise::NoiseNode;
 pub use saw_oscillator::SawOscillatorNode;
 pub use sequence::{SequenceNode, SourceInterval};
 pub use sine_oscillator::SineOscillatorNode;

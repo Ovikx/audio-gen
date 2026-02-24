@@ -4,7 +4,7 @@ use crate::{
     input_buffer::SharedExternalInputBuffer,
     math::spline_polynomial::Point,
     node::{
-        ExternalFloatNode, FloatSource, MultiplyNode, SawOscillatorNode, SequenceNode,
+        ExternalFloatNode, FloatSource, MultiplyNode, NoiseNode, SawOscillatorNode, SequenceNode,
         SineOscillatorNode, SourceInterval, SplineFloatNode, SquareOscillatorNode, SumNode,
     },
     scheduler::SharedNode,
@@ -112,6 +112,14 @@ impl Graph {
             augend_source_id,
             addend_source_id,
         ))));
+        self.current_id += 1;
+        id
+    }
+
+    pub fn noise_node(&mut self, seed: u64) -> usize {
+        let id = self.current_id;
+        self.nodes
+            .push(Arc::new(Mutex::new(NoiseNode::new(id, seed))));
         self.current_id += 1;
         id
     }
