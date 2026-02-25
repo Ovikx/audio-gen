@@ -10,8 +10,6 @@ use crate::{
     scheduler::SharedNode,
 };
 
-pub trait SerializableNode {}
-
 pub struct Graph {
     current_id: usize,
     nodes: Vec<SharedNode>,
