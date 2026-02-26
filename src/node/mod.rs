@@ -1,3 +1,4 @@
+mod absolute_value;
 mod external_float;
 mod float;
 mod multiply;
@@ -9,6 +10,7 @@ mod spline_float;
 mod square_oscillator;
 mod sum;
 
+pub use absolute_value::AbsoluteValue;
 pub use external_float::ExternalFloatNode;
 pub use float::FloatSource;
 pub use multiply::MultiplyNode;

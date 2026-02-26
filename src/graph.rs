@@ -4,8 +4,9 @@ use crate::{
     input_buffer::SharedExternalInputBuffer,
     math::spline_polynomial::Point,
     node::{
-        ExternalFloatNode, FloatSource, MultiplyNode, NoiseNode, SawOscillatorNode, SequenceNode,
-        SineOscillatorNode, SourceInterval, SplineFloatNode, SquareOscillatorNode, SumNode,
+        AbsoluteValue, ExternalFloatNode, FloatSource, MultiplyNode, NoiseNode, SawOscillatorNode,
+        SequenceNode, SineOscillatorNode, SourceInterval, SplineFloatNode, SquareOscillatorNode,
+        SumNode,
     },
     scheduler::SharedNode,
 };
@@ -118,6 +119,14 @@ impl Graph {
         let id = self.current_id;
         self.nodes
             .push(Arc::new(Mutex::new(NoiseNode::new(id, seed))));
+        self.current_id += 1;
+        id
+    }
+
+    pub fn absolute_value_node(&mut self, source_id: usize) -> usize {
+        let id = self.current_id;
+        self.nodes
+            .push(Arc::new(Mutex::new(AbsoluteValue::new(id, source_id))));
         self.current_id += 1;
         id
     }
