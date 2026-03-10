@@ -4,9 +4,9 @@ use crate::{
     input_buffer::SharedExternalInputBuffer,
     math::spline_polynomial::Point,
     node::{
-        AbsoluteValue, ExternalFloatNode, FloatSource, MultiplyNode, NoiseNode, SawOscillatorNode,
-        SequenceNode, SineOscillatorNode, SourceInterval, SplineFloatNode, SquareOscillatorNode,
-        SumNode,
+        AbsoluteValue, ExternalFloatNode, FilterType, FloatSource, MultiplyNode, NoiseNode,
+        SVFNode, SawOscillatorNode, SequenceNode, SineOscillatorNode, SourceInterval,
+        SplineFloatNode, SquareOscillatorNode, SumNode,
     },
     scheduler::SharedNode,
 };
@@ -127,6 +127,25 @@ impl Graph {
         let id = self.current_id;
         self.nodes
             .push(Arc::new(Mutex::new(AbsoluteValue::new(id, source_id))));
+        self.current_id += 1;
+        id
+    }
+
+    pub fn svf_node(
+        &mut self,
+        filter_type: FilterType,
+        sample_source_id: usize,
+        frequency_cutoff_source_id: usize,
+        resonance_source_id: usize,
+    ) -> usize {
+        let id = self.current_id;
+        self.nodes.push(Arc::new(Mutex::new(SVFNode::new(
+            id,
+            filter_type,
+            sample_source_id,
+            frequency_cutoff_source_id,
+            resonance_source_id,
+        ))));
         self.current_id += 1;
         id
     }

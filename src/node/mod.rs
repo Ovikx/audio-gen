@@ -9,6 +9,7 @@ mod sine_oscillator;
 mod spline_float;
 mod square_oscillator;
 mod sum;
+mod svf;
 
 pub use absolute_value::AbsoluteValue;
 pub use external_float::ExternalFloatNode;
@@ -21,3 +22,4 @@ pub use sine_oscillator::SineOscillatorNode;
 pub use spline_float::SplineFloatNode;
 pub use square_oscillator::SquareOscillatorNode;
 pub use sum::SumNode;
+pub use svf::{FilterType, SVFNode};
