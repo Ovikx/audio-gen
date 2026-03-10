@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, MutexGuard};
 
 use anyhow::{anyhow, bail};
 
@@ -11,6 +11,11 @@ pub fn build_schedule(
     nodes: NodeExecutionSchedule,
     max_id: usize,
 ) -> Result<NodeExecutionSchedule, anyhow::Error> {
+    // Graph must have exactly one root since our final audio sample comes from the last executed node
+    if !is_graph_single_rooted(&nodes) {
+        bail!("expected a single-rooted graph, instead got a graph with multiple roots")
+    }
+
     let mut schedule = vec![];
 
     let mut id_to_dependent_ids: Vec<Vec<usize>> = vec![vec![]; max_id + 1];
@@ -83,6 +88,28 @@ pub fn build_schedule(
     Ok(schedule)
 }
 
+/// Checks if the audio graph is single-rooted.
+/// We want to ensure that all nodes are connected to a single root node.
+pub fn is_graph_single_rooted(nodes: &NodeExecutionSchedule) -> bool {
+    // Graph validation is done sequentially, so locking all nodes for the duration of the function is acceptable
+    let locked_nodes: Vec<MutexGuard<dyn Source>> =
+        nodes.iter().map(|node| node.lock().unwrap()).collect();
+
+    let num_roots: usize = locked_nodes
+        .iter()
+        .map(|node| {
+            let num_dependents = locked_nodes
+                .iter()
+                .filter(|other_node| other_node.dependency_ids().contains(&node.id()))
+                .count();
+            num_dependents
+        })
+        .filter(|num_dependents| *num_dependents == 0)
+        .count();
+
+    num_roots == 1
+}
+
 #[cfg(test)]
 mod tests {
     use std::sync::{Arc, Mutex};
@@ -91,7 +118,7 @@ mod tests {
 
     use crate::{
         context::AudioContext,
-        scheduler::{NodeExecutionSchedule, build_schedule},
+        scheduler::{NodeExecutionSchedule, build_schedule, is_graph_single_rooted},
         source::{NodeOutput, Source},
     };
 
@@ -162,6 +189,26 @@ mod tests {
 
         let schedule = build_schedule(nodes, 2);
         assert!(schedule.is_err());
+    }
+
+    #[test]
+    fn test_multiple_roots() {
+        let nodes: NodeExecutionSchedule = vec![
+            Arc::new(Mutex::new(FloatSource::new(0, 1.))),
+            Arc::new(Mutex::new(FloatSource::new(1, 1.))),
+        ];
+
+        assert!(!is_graph_single_rooted(&nodes));
+    }
+
+    #[test]
+    fn test_single_root() {
+        let nodes: NodeExecutionSchedule = vec![
+            Arc::new(Mutex::new(FloatSource::new(0, 1.))),
+            Arc::new(Mutex::new(EchoNode::new(1, 0))),
+        ];
+
+        assert!(is_graph_single_rooted(&nodes));
     }
 
     pub struct FloatSource {
