@@ -1,6 +1,7 @@
 mod absolute_value;
 mod external_float;
 mod float;
+mod freeverb;
 mod multiply;
 mod noise;
 mod saw_oscillator;
@@ -14,6 +15,7 @@ mod svf;
 pub use absolute_value::AbsoluteValue;
 pub use external_float::ExternalFloatNode;
 pub use float::FloatSource;
+pub use freeverb::FreeverbNode;
 pub use multiply::MultiplyNode;
 pub use noise::NoiseNode;
 pub use saw_oscillator::SawOscillatorNode;

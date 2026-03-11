@@ -4,8 +4,8 @@ use crate::{
     input_buffer::SharedExternalInputBuffer,
     math::spline_polynomial::Point,
     node::{
-        AbsoluteValue, ExternalFloatNode, FilterType, FloatSource, MultiplyNode, NoiseNode,
-        SVFNode, SawOscillatorNode, SequenceNode, SineOscillatorNode, SourceInterval,
+        AbsoluteValue, ExternalFloatNode, FilterType, FloatSource, FreeverbNode, MultiplyNode,
+        NoiseNode, SVFNode, SawOscillatorNode, SequenceNode, SineOscillatorNode, SourceInterval,
         SplineFloatNode, SquareOscillatorNode, SumNode,
     },
     scheduler::SharedNode,
@@ -155,6 +155,27 @@ impl Graph {
         self.nodes.push(Arc::new(Mutex::new(SequenceNode::new(
             id,
             source_intervals,
+        ))));
+        self.current_id += 1;
+        id
+    }
+
+    pub fn freeverb_node(
+        &mut self,
+        sample_source_id: usize,
+        room_size_source_id: usize,
+        damping_source_id: usize,
+        wet_source_id: usize,
+        dry_source_id: usize,
+    ) -> usize {
+        let id = self.current_id;
+        self.nodes.push(Arc::new(Mutex::new(FreeverbNode::new(
+            id,
+            sample_source_id,
+            room_size_source_id,
+            damping_source_id,
+            wet_source_id,
+            dry_source_id,
         ))));
         self.current_id += 1;
         id
