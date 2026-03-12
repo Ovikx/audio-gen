@@ -1,4 +1,7 @@
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::{
+    collections::HashSet,
+    sync::{Arc, Mutex, MutexGuard},
+};
 
 use anyhow::{anyhow, bail};
 
@@ -7,12 +10,25 @@ use crate::source::Source;
 pub type SharedNode = Arc<Mutex<dyn Source>>;
 pub type NodeExecutionSchedule = Vec<SharedNode>;
 
+/// Builds a node execution schedule defining the order nodes are polled.
+///
+/// This function assumes that the input audio graph is messy, so it performs
+/// the following validations and transformations to ensure the audio graph is
+/// schedulable:
+///
+/// - In a graph with multiple nodes, isolated nodes (i.e. those with no
+///   dependencies or dependents) are removed
+/// - Scheduling fails if there are multiple graph components
 pub fn build_schedule(
     nodes: NodeExecutionSchedule,
     max_id: usize,
 ) -> Result<NodeExecutionSchedule, anyhow::Error> {
+    // Isolated nodes in graphs with multiple nodes have no semantic meaning, so
+    // removing them helps verify that the graph is valid
+    let trimmed_nodes = remove_isolated_nodes(&nodes);
+
     // Graph must have exactly one root since our final audio sample comes from the last executed node
-    if !is_graph_single_rooted(&nodes) {
+    if !is_graph_single_rooted(&trimmed_nodes) {
         bail!("expected a single-rooted graph, instead got a graph with multiple roots")
     }
 
@@ -24,7 +40,7 @@ pub fn build_schedule(
     let mut stack: Vec<usize> = vec![]; // For DFS from leaf nodes
     let mut id_to_num_dependencies_satisfied: Vec<u32> = vec![0; max_id + 1];
 
-    for node in &nodes {
+    for node in &trimmed_nodes {
         let borrowed_node = node.lock().unwrap();
         id_to_node[borrowed_node.id()] = Some(node.clone());
 
@@ -77,15 +93,45 @@ pub fn build_schedule(
         }
     }
 
-    if schedule.len() != nodes.len() {
+    if schedule.len() != trimmed_nodes.len() {
         bail!(
             "not all nodes were scheduled. received {} nodes, scheduled only {}",
-            nodes.len(),
+            trimmed_nodes.len(),
             schedule.len()
         );
     }
 
     Ok(schedule)
+}
+
+pub fn remove_isolated_nodes(nodes: &NodeExecutionSchedule) -> NodeExecutionSchedule {
+    let all_nodes = nodes.clone();
+
+    // Graph validation is done sequentially, so locking all nodes for the duration of the function is acceptable
+    let isolated_node_ids: HashSet<usize> = {
+        let locked_nodes: Vec<MutexGuard<dyn Source>> =
+            nodes.iter().map(|node| node.lock().unwrap()).collect();
+
+        locked_nodes
+            .iter()
+            .map(|node| {
+                let num_dependents = locked_nodes
+                    .iter()
+                    .filter(|other_node| other_node.dependency_ids().contains(&node.id()))
+                    .count();
+                (node.id(), num_dependents, node.dependency_ids().len())
+            })
+            .filter(|(_id, num_dependents, num_dependencies)| {
+                *num_dependencies == 0 && *num_dependents == 0
+            })
+            .map(|(id, _num_dependents, _num_dependencies)| id)
+            .collect()
+    };
+
+    all_nodes
+        .into_iter()
+        .filter(|node| !isolated_node_ids.contains(&node.lock().unwrap().id()))
+        .collect()
 }
 
 /// Checks if the audio graph is single-rooted.
@@ -118,7 +164,9 @@ mod tests {
 
     use crate::{
         context::AudioContext,
-        scheduler::{NodeExecutionSchedule, build_schedule, is_graph_single_rooted},
+        scheduler::{
+            NodeExecutionSchedule, build_schedule, is_graph_single_rooted, remove_isolated_nodes,
+        },
         source::{NodeOutput, Source},
     };
 
@@ -209,6 +257,18 @@ mod tests {
         ];
 
         assert!(is_graph_single_rooted(&nodes));
+    }
+
+    #[test]
+    fn test_remove_isolated_nodes() {
+        let nodes: NodeExecutionSchedule = vec![
+            Arc::new(Mutex::new(FloatSource::new(0, 1.))),
+            Arc::new(Mutex::new(FloatSource::new(1, 1.))),
+            Arc::new(Mutex::new(EchoNode::new(2, 0))),
+        ];
+
+        let trimmed_nodes = remove_isolated_nodes(&nodes);
+        assert_eq!(trimmed_nodes.len(), 2);
     }
 
     pub struct FloatSource {
