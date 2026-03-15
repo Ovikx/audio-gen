@@ -8,3 +8,10 @@ anyhow = "1.0.102"
 nalgebra = "0.34"
 test-utils = { path = "test-utils" }
 rand = "0.9.2"
+
+[dev-dependencies]
+criterion = { version = "0.8", features = ["html_reports"] }
+
+[[bench]]
+name = "generator"
+harness = false
