@@ -9,11 +9,12 @@ use crate::{
         SplineFloatNode, SquareOscillatorNode, SumNode,
     },
     scheduler::SharedNode,
+    source::Source,
 };
 
 pub struct Graph {
     current_id: usize,
-    nodes: Vec<SharedNode>,
+    nodes: Vec<Box<dyn Source>>,
 }
 
 impl Graph {
@@ -26,8 +27,7 @@ impl Graph {
 
     pub fn float_node(&mut self, value: f32) -> usize {
         let id = self.current_id;
-        self.nodes
-            .push(Arc::new(Mutex::new(FloatSource::new(id, value))));
+        self.nodes.push(Box::new(FloatSource::new(id, value)));
         self.current_id += 1;
         id
     }
@@ -38,11 +38,11 @@ impl Graph {
         input_buffer_index: usize,
     ) -> usize {
         let id = self.current_id;
-        self.nodes.push(Arc::new(Mutex::new(ExternalFloatNode::new(
+        self.nodes.push(Box::new(ExternalFloatNode::new(
             id,
             input_buffer,
             input_buffer_index,
-        ))));
+        )));
         self.current_id += 1;
         id
     }
@@ -53,31 +53,27 @@ impl Graph {
         multiplier_source_id: usize,
     ) -> usize {
         let id = self.current_id;
-        self.nodes.push(Arc::new(Mutex::new(MultiplyNode::new(
+        self.nodes.push(Box::new(MultiplyNode::new(
             id,
             multiplicand_source_id,
             multiplier_source_id,
-        ))));
+        )));
         self.current_id += 1;
         id
     }
 
     pub fn saw_oscillator_node(&mut self, frequency_source_id: usize) -> usize {
         let id = self.current_id;
-        self.nodes.push(Arc::new(Mutex::new(SawOscillatorNode::new(
-            id,
-            frequency_source_id,
-        ))));
+        self.nodes
+            .push(Box::new(SawOscillatorNode::new(id, frequency_source_id)));
         self.current_id += 1;
         id
     }
 
     pub fn sine_oscillator_node(&mut self, frequency_source_id: usize) -> usize {
         let id = self.current_id;
-        self.nodes.push(Arc::new(Mutex::new(SineOscillatorNode::new(
-            id,
-            frequency_source_id,
-        ))));
+        self.nodes
+            .push(Box::new(SineOscillatorNode::new(id, frequency_source_id)));
         self.current_id += 1;
         id
     }
@@ -85,48 +81,43 @@ impl Graph {
     pub fn square_oscillator_node(&mut self, frequency_source_id: usize) -> usize {
         let id = self.current_id;
         self.nodes
-            .push(Arc::new(Mutex::new(SquareOscillatorNode::new(
-                id,
-                frequency_source_id,
-            ))));
+            .push(Box::new(SquareOscillatorNode::new(id, frequency_source_id)));
         self.current_id += 1;
         id
     }
 
     pub fn spline_float_node(&mut self, frequency_source_id: usize, points: Vec<Point>) -> usize {
         let id = self.current_id;
-        self.nodes.push(Arc::new(Mutex::new(SplineFloatNode::new(
+        self.nodes.push(Box::new(SplineFloatNode::new(
             id,
             frequency_source_id,
             points,
-        ))));
+        )));
         self.current_id += 1;
         id
     }
 
     pub fn sum_node(&mut self, augend_source_id: usize, addend_source_id: usize) -> usize {
         let id = self.current_id;
-        self.nodes.push(Arc::new(Mutex::new(SumNode::new(
+        self.nodes.push(Box::new(SumNode::new(
             id,
             augend_source_id,
             addend_source_id,
-        ))));
+        )));
         self.current_id += 1;
         id
     }
 
     pub fn noise_node(&mut self, seed: u64) -> usize {
         let id = self.current_id;
-        self.nodes
-            .push(Arc::new(Mutex::new(NoiseNode::new(id, seed))));
+        self.nodes.push(Box::new(NoiseNode::new(id, seed)));
         self.current_id += 1;
         id
     }
 
     pub fn absolute_value_node(&mut self, source_id: usize) -> usize {
         let id = self.current_id;
-        self.nodes
-            .push(Arc::new(Mutex::new(AbsoluteValue::new(id, source_id))));
+        self.nodes.push(Box::new(AbsoluteValue::new(id, source_id)));
         self.current_id += 1;
         id
     }
@@ -139,23 +130,21 @@ impl Graph {
         resonance_source_id: usize,
     ) -> usize {
         let id = self.current_id;
-        self.nodes.push(Arc::new(Mutex::new(SVFNode::new(
+        self.nodes.push(Box::new(SVFNode::new(
             id,
             filter_type,
             sample_source_id,
             frequency_cutoff_source_id,
             resonance_source_id,
-        ))));
+        )));
         self.current_id += 1;
         id
     }
 
     pub fn sequence_node(&mut self, source_intervals: Vec<SourceInterval>) -> usize {
         let id = self.current_id;
-        self.nodes.push(Arc::new(Mutex::new(SequenceNode::new(
-            id,
-            source_intervals,
-        ))));
+        self.nodes
+            .push(Box::new(SequenceNode::new(id, source_intervals)));
         self.current_id += 1;
         id
     }
@@ -169,19 +158,19 @@ impl Graph {
         dry_source_id: usize,
     ) -> usize {
         let id = self.current_id;
-        self.nodes.push(Arc::new(Mutex::new(FreeverbNode::new(
+        self.nodes.push(Box::new(FreeverbNode::new(
             id,
             sample_source_id,
             room_size_source_id,
             damping_source_id,
             wet_source_id,
             dry_source_id,
-        ))));
+        )));
         self.current_id += 1;
         id
     }
 
-    pub fn nodes(&self) -> Vec<SharedNode> {
-        self.nodes.clone()
+    pub fn nodes(self) -> Vec<Box<dyn Source>> {
+        self.nodes
     }
 }

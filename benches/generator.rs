@@ -24,7 +24,7 @@ fn bench_single_chain(c: &mut Criterion) {
     let mut generator = SampleGenerator::new(schedule, AudioContext::new(44100.)).unwrap();
 
     let mut group = c.benchmark_group("single chain");
-    for num_batches in [1u32, 10, 20, 100] {
+    for num_batches in [1u32] {
         group.bench_function(
             format!(
                 "{} nodes ({} batches of {} = {} samples)",
@@ -54,7 +54,7 @@ fn bench_binary(c: &mut Criterion) {
     let mut generator = SampleGenerator::new(schedule, AudioContext::new(44100.)).unwrap();
 
     let mut group = c.benchmark_group("binary");
-    for num_batches in [1u32, 10, 20, 100] {
+    for num_batches in [1u32] {
         group.bench_function(
             format!(
                 "{} nodes ({} batches of {} = {} samples)",

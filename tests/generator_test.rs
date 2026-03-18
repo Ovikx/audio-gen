@@ -11,9 +11,9 @@ use test_utils::threshold_eq_float32;
 
 #[test]
 fn test_basic_graph() {
-    let float_source_node = Arc::new(Mutex::new(FloatSource::new(0, 1.)));
-    let sine_oscillator_node = Arc::new(Mutex::new(SineOscillatorNode::new(1, 0)));
-    let sum_node = Arc::new(Mutex::new(SumNode::new(2, 1, 1)));
+    let float_source_node = Box::new(FloatSource::new(0, 1.));
+    let sine_oscillator_node = Box::new(SineOscillatorNode::new(1, 0));
+    let sum_node = Box::new(SumNode::new(2, 1, 1));
 
     let sample_rate = 4.;
     let nodes: NodeExecutionSchedule = vec![float_source_node, sine_oscillator_node, sum_node];
