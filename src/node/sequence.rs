@@ -3,7 +3,10 @@ use std::{
     collections::{HashMap, HashSet},
 };
 
-use crate::source::Source;
+use crate::{
+    context::AudioContext,
+    source::{NodeOutput, Source},
+};
 
 #[derive(Clone, Copy, Debug)]
 pub struct SourceInterval {
@@ -104,20 +107,14 @@ impl SequenceNode {
             unfilled_buffer_ids,
         }
     }
-}
 
-impl Source for SequenceNode {
-    fn poll(
-        &mut self,
-        _audio_context: &crate::context::AudioContext,
-        id_to_output: &crate::source::NodeOutput,
-    ) -> Option<f32> {
-        // Dependency nodes don't wait until its their turn to produce samples,
-        // so we need to capture their output and use it later
+    fn poll(&mut self, id_to_output: &NodeOutput, sample_idx: usize) -> Option<f32> {
+        // Dependency nodes don't wait until it's their turn to produce samples,
+        // so we need to capture their output and use it later.
         self.unfilled_buffer_ids.retain(|source_id| {
             let output_buffer = self.source_id_to_output_buffer.get_mut(source_id).unwrap();
             let buffer_vec: &mut Vec<f32> = output_buffer.buffer.as_mut();
-            buffer_vec.push(id_to_output[*source_id].unwrap_or(0.));
+            buffer_vec.push(id_to_output[*source_id][sample_idx].unwrap_or(0.));
             buffer_vec.len() < buffer_vec.capacity()
         });
 
@@ -139,13 +136,13 @@ impl Source for SequenceNode {
                 .source_id_to_output_buffer
                 .get_mut(&dequeued_interval.source_id)
                 .unwrap();
-            output_buffer.read_index = 0; // The next interval using the same source will start from the beginning of its output buffer
+            output_buffer.read_index = 0; // The next interval using the same source will start from the beginning of its output buffer.
 
             self.active_source_ids.remove(&dequeued_interval.source_id);
             self.next_dequeue_index += 1;
         }
 
-        // If there's nothing to queue or dequeue, we should just return nothing
+        // If there's nothing to queue or dequeue, we should just return nothing.
         if self.next_queue_index >= self.start_sorted_intervals.len()
             && self.next_dequeue_index >= self.end_sorted_intervals.len()
         {
@@ -163,8 +160,22 @@ impl Source for SequenceNode {
                 output_buffer.read_index += 1;
                 sample
             })
-            .sum(); // The sum may go beyond the [-1.0, 1.0] range, so a clipping strategy would be required downstream
+            .sum(); // The sum may go beyond the [-1.0, 1.0] range, so a clipping strategy would be required downstream.
         Some(sample_sum)
+    }
+}
+
+impl Source for SequenceNode {
+    fn batch_poll(
+        &mut self,
+        num_samples: usize,
+        _audio_context: &AudioContext,
+        id_to_output: &NodeOutput,
+        output: &mut [Option<f32>],
+    ) {
+        for idx in 0..num_samples {
+            output[idx] = self.poll(id_to_output, idx);
+        }
     }
 
     fn id(&self) -> usize {

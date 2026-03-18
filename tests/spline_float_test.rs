@@ -8,12 +8,16 @@ fn test_spline_node_sequence() {
     let float_node_id = graph.float_node(1.);
     graph.spline_float_node(float_node_id, vec![(0.0, 0.0), (1.0, 1.0)]);
 
-    let sample_rate = 4.;
-    let mut generator =
-        SampleGenerator::new(graph.nodes(), AudioContext::new(sample_rate)).unwrap();
-
     let num_sets = 100;
-    let samples = generator.batch_poll(4 * num_sets + 1);
+    let sample_rate = 4.;
+    let mut generator = SampleGenerator::new(
+        graph.nodes(),
+        AudioContext::new(sample_rate),
+        4 * num_sets + 1,
+    )
+    .unwrap();
+
+    let samples = generator.batch_poll();
     let expected_samples: Vec<f32> = vec![0.25, 0.5, 0.75, 0.0];
     assert!(threshold_eq_float32(samples[0], 0.));
     dbg!(&samples);

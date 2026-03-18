@@ -17,11 +17,23 @@ impl AbsoluteValue {
             dependency_ids: vec![source_id],
         }
     }
+
+    fn poll(&mut self, input: Option<f32>) -> Option<f32> {
+        input.map(|input| input.abs())
+    }
 }
 
 impl Source for AbsoluteValue {
-    fn poll(&mut self, _audio_context: &AudioContext, id_to_output: &NodeOutput) -> Option<f32> {
-        id_to_output[self.source_id].map(|input| input.abs())
+    fn batch_poll(
+        &mut self,
+        num_samples: usize,
+        _audio_context: &AudioContext,
+        id_to_output: &NodeOutput,
+        output: &mut [Option<f32>],
+    ) {
+        for idx in 0..num_samples {
+            output[idx] = self.poll(id_to_output[self.source_id][idx]);
+        }
     }
 
     fn id(&self) -> usize {

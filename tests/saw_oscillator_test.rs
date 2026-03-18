@@ -8,12 +8,16 @@ fn test_saw_oscillator_node_sequence() {
     let float_node_id = graph.float_node(1.);
     graph.saw_oscillator_node(float_node_id);
 
-    let sample_rate = 4.;
-    let mut generator =
-        SampleGenerator::new(graph.nodes(), AudioContext::new(sample_rate)).unwrap();
-
     let num_sets = 100;
-    let samples = generator.batch_poll(4 * num_sets + 1);
+    let sample_rate = 4.;
+    let mut generator = SampleGenerator::new(
+        graph.nodes(),
+        AudioContext::new(sample_rate),
+        4 * num_sets + 1,
+    )
+    .unwrap();
+
+    let samples = generator.batch_poll();
     let expected_samples: Vec<f32> = vec![-1.0, -0.5, 0.0, 0.5]; // Index 1 is a discontinuity, so that value is not used for validation
     dbg!(&samples);
     for i in 0..num_sets * 4 {

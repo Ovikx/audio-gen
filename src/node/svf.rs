@@ -49,13 +49,17 @@ impl SVFNode {
             lp: 0.,
         }
     }
-}
 
-impl Source for SVFNode {
-    fn poll(&mut self, audio_context: &AudioContext, id_to_output: &NodeOutput) -> Option<f32> {
-        id_to_output[self.frequency_cutoff_source_id]
-            .zip(id_to_output[self.resonance_source_id])
-            .zip(id_to_output[self.sample_source_id])
+    fn poll(
+        &mut self,
+        audio_context: &AudioContext,
+        frequency_cutoff: Option<f32>,
+        resonance: Option<f32>,
+        sample: Option<f32>,
+    ) -> Option<f32> {
+        frequency_cutoff
+            .zip(resonance)
+            .zip(sample)
             .map(|((frequency_cutoff, resonance), sample)| {
                 let frequency_control =
                     2.0 * (PI * frequency_cutoff / audio_context.sample_rate).sin();
@@ -71,6 +75,25 @@ impl Source for SVFNode {
                     FilterType::LowPass => self.lp,
                 }
             })
+    }
+}
+
+impl Source for SVFNode {
+    fn batch_poll(
+        &mut self,
+        num_samples: usize,
+        audio_context: &AudioContext,
+        id_to_output: &NodeOutput,
+        output: &mut [Option<f32>],
+    ) {
+        for idx in 0..num_samples {
+            output[idx] = self.poll(
+                audio_context,
+                id_to_output[self.frequency_cutoff_source_id][idx],
+                id_to_output[self.resonance_source_id][idx],
+                id_to_output[self.sample_source_id][idx],
+            );
+        }
     }
 
     fn id(&self) -> usize {

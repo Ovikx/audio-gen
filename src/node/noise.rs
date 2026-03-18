@@ -19,11 +19,23 @@ impl NoiseNode {
             dependency_ids: vec![],
         }
     }
+
+    fn poll(&mut self) -> Option<f32> {
+        Some(self.rng_gen.random_range(-1.0..=1.0))
+    }
 }
 
 impl Source for NoiseNode {
-    fn poll(&mut self, _audio_context: &AudioContext, _id_to_output: &NodeOutput) -> Option<f32> {
-        Some(self.rng_gen.random_range(-1.0..=1.0))
+    fn batch_poll(
+        &mut self,
+        num_samples: usize,
+        _audio_context: &AudioContext,
+        _id_to_output: &NodeOutput,
+        output: &mut [Option<f32>],
+    ) {
+        for idx in 0..num_samples {
+            output[idx] = self.poll();
+        }
     }
 
     fn id(&self) -> usize {

@@ -19,11 +19,9 @@ impl SquareOscillatorNode {
             current_time: 0.,
         }
     }
-}
 
-impl Source for SquareOscillatorNode {
-    fn poll(&mut self, audio_context: &AudioContext, id_to_output: &NodeOutput) -> Option<f32> {
-        id_to_output[self.frequency_source_id].map(|f| {
+    fn poll(&mut self, audio_context: &AudioContext, frequency: Option<f32>) -> Option<f32> {
+        frequency.map(|f| {
             let sample: f32;
             if self.current_time < 0.5 {
                 sample = 1.;
@@ -34,6 +32,20 @@ impl Source for SquareOscillatorNode {
             self.current_time = self.current_time.fract();
             sample
         })
+    }
+}
+
+impl Source for SquareOscillatorNode {
+    fn batch_poll(
+        &mut self,
+        num_samples: usize,
+        audio_context: &AudioContext,
+        id_to_output: &NodeOutput,
+        output: &mut [Option<f32>],
+    ) {
+        for idx in 0..num_samples {
+            output[idx] = self.poll(audio_context, id_to_output[self.frequency_source_id][idx]);
+        }
     }
 
     fn id(&self) -> usize {

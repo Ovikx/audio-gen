@@ -151,7 +151,7 @@ impl AllpassFilter {
 /// ## Delay Lines and Sample Rate
 ///
 /// The internal delay lines are allocated lazily on the first call to
-/// [`Source::poll`]. Their lengths are the original Freeverb values
+/// [`Source::batch_poll`]. Their lengths are the original Freeverb values
 /// (measured at 44 100 Hz) scaled proportionally to whatever
 /// `AudioContext::sample_rate` is in use, so the reverb character is
 /// preserved at any sample rate.
@@ -170,7 +170,7 @@ pub struct FreeverbNode {
     dry_source_id: usize,
     dependency_ids: Vec<usize>,
 
-    // Delay lines — None until the first poll(), when sample_rate is known.
+    // Delay lines — None until the first batch_poll(), when sample_rate is known.
     combs: Option<Vec<CombFilter>>,
     allpasses: Option<Vec<AllpassFilter>>,
 
@@ -224,19 +224,20 @@ impl FreeverbNode {
                 .collect(),
         );
     }
-}
 
-impl Source for FreeverbNode {
-    fn poll(&mut self, audio_context: &AudioContext, id_to_output: &NodeOutput) -> Option<f32> {
-        if self.combs.is_none() {
-            self.init_filters(audio_context.sample_rate);
-        }
-
-        id_to_output[self.sample_source_id]
-            .zip(id_to_output[self.room_size_source_id])
-            .zip(id_to_output[self.damping_source_id])
-            .zip(id_to_output[self.wet_source_id])
-            .zip(id_to_output[self.dry_source_id])
+    fn poll(
+        &mut self,
+        sample: Option<f32>,
+        room_size: Option<f32>,
+        damping: Option<f32>,
+        wet: Option<f32>,
+        dry: Option<f32>,
+    ) -> Option<f32> {
+        sample
+            .zip(room_size)
+            .zip(damping)
+            .zip(wet)
+            .zip(dry)
             .map(|((((sample, room_size), damping), wet), dry)| {
                 // Smooth room_size and damping to suppress clicks under modulation.
                 self.smoothed_room_size += SMOOTH_COEFF * (room_size - self.smoothed_room_size);
@@ -263,6 +264,30 @@ impl Source for FreeverbNode {
 
                 reverb_out * wet + sample * dry
             })
+    }
+}
+
+impl Source for FreeverbNode {
+    fn batch_poll(
+        &mut self,
+        num_samples: usize,
+        audio_context: &AudioContext,
+        id_to_output: &NodeOutput,
+        output: &mut [Option<f32>],
+    ) {
+        if self.combs.is_none() {
+            self.init_filters(audio_context.sample_rate);
+        }
+
+        for idx in 0..num_samples {
+            output[idx] = self.poll(
+                id_to_output[self.sample_source_id][idx],
+                id_to_output[self.room_size_source_id][idx],
+                id_to_output[self.damping_source_id][idx],
+                id_to_output[self.wet_source_id][idx],
+                id_to_output[self.dry_source_id][idx],
+            );
+        }
     }
 
     fn id(&self) -> usize {

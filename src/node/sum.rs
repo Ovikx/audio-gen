@@ -19,14 +19,26 @@ impl SumNode {
             dependency_ids: vec![augend_source_id, addend_source_id],
         }
     }
+
+    fn poll(&mut self, augend: Option<f32>, addend: Option<f32>) -> Option<f32> {
+        Some(augend.unwrap_or(0.) + addend.unwrap_or(0.))
+    }
 }
 
 impl Source for SumNode {
-    fn poll(&mut self, _audio_context: &AudioContext, id_to_output: &NodeOutput) -> Option<f32> {
-        Some(
-            id_to_output[self.augend_source_id].unwrap_or(0.)
-                + id_to_output[self.addend_source_id].unwrap_or(0.),
-        )
+    fn batch_poll(
+        &mut self,
+        num_samples: usize,
+        _audio_context: &AudioContext,
+        id_to_output: &NodeOutput,
+        output: &mut [Option<f32>],
+    ) {
+        for idx in 0..num_samples {
+            output[idx] = self.poll(
+                id_to_output[self.augend_source_id][idx],
+                id_to_output[self.addend_source_id][idx],
+            );
+        }
     }
 
     fn id(&self) -> usize {

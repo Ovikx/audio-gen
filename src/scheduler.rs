@@ -1,7 +1,7 @@
 use std::{
     cmp::max,
     collections::{HashMap, HashSet},
-    sync::{Arc, Mutex, MutexGuard},
+    sync::{Arc, Mutex},
 };
 
 use anyhow::{anyhow, bail};
@@ -288,8 +288,6 @@ pub fn build_parallel_schedule(
 }
 #[cfg(test)]
 mod tests {
-    use std::sync::{Arc, Mutex};
-
     use rand::seq::SliceRandom;
 
     use crate::{
@@ -483,12 +481,16 @@ mod tests {
     }
 
     impl Source for FloatSource {
-        fn poll(
+        fn batch_poll(
             &mut self,
+            num_samples: usize,
             _audio_context: &AudioContext,
             _id_to_output: &NodeOutput,
-        ) -> Option<f32> {
-            Some(self.value)
+            output: &mut [Option<f32>],
+        ) {
+            for idx in 0..num_samples {
+                output[idx] = Some(self.value);
+            }
         }
 
         fn id(&self) -> usize {
@@ -517,12 +519,16 @@ mod tests {
     }
 
     impl Source for EchoNode {
-        fn poll(
+        fn batch_poll(
             &mut self,
+            num_samples: usize,
             _audio_context: &AudioContext,
             id_to_output: &NodeOutput,
-        ) -> Option<f32> {
-            id_to_output[self.value_source_id]
+            output: &mut [Option<f32>],
+        ) {
+            for idx in 0..num_samples {
+                output[idx] = id_to_output[self.value_source_id][idx];
+            }
         }
 
         fn id(&self) -> usize {
@@ -553,14 +559,18 @@ mod tests {
     }
 
     impl Source for SumNode {
-        fn poll(
+        fn batch_poll(
             &mut self,
+            num_samples: usize,
             _audio_context: &AudioContext,
             id_to_output: &NodeOutput,
-        ) -> Option<f32> {
-            id_to_output[self.value_source1_id]
-                .zip(id_to_output[self.value_source2_id])
-                .map(|(augend, addend)| augend + addend)
+            output: &mut [Option<f32>],
+        ) {
+            for idx in 0..num_samples {
+                output[idx] = id_to_output[self.value_source1_id][idx]
+                    .zip(id_to_output[self.value_source2_id][idx])
+                    .map(|(augend, addend)| augend + addend);
+            }
         }
 
         fn id(&self) -> usize {

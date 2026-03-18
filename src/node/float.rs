@@ -1,4 +1,7 @@
-use crate::{context::AudioContext, source::Source};
+use crate::{
+    context::AudioContext,
+    source::{NodeOutput, Source},
+};
 
 pub struct FloatSource {
     id: usize,
@@ -14,15 +17,23 @@ impl FloatSource {
             dependency_ids: vec![],
         }
     }
+
+    fn poll(&mut self) -> Option<f32> {
+        Some(self.value)
+    }
 }
 
 impl Source for FloatSource {
-    fn poll(
+    fn batch_poll(
         &mut self,
+        num_samples: usize,
         _audio_context: &AudioContext,
-        _id_to_output: &crate::source::NodeOutput,
-    ) -> Option<f32> {
-        Some(self.value)
+        _id_to_output: &NodeOutput,
+        output: &mut [Option<f32>],
+    ) {
+        for idx in 0..num_samples {
+            output[idx] = self.poll();
+        }
     }
 
     fn id(&self) -> usize {

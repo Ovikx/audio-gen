@@ -19,11 +19,16 @@ fn test_overlapping_sample_aggregation() {
     }
 
     graph.sequence_node(intervals);
-    let mut generator =
-        SampleGenerator::new(graph.nodes(), AudioContext::new(SAMPLE_RATE)).unwrap();
+    let mut generator = SampleGenerator::new(
+        graph.nodes(),
+        AudioContext::new(SAMPLE_RATE),
+        (NUM_GENERATORS + INTERVAL_LENGTH - 1) as usize,
+    )
+    .unwrap();
 
+    let samples = generator.batch_poll();
     for i in 0..NUM_GENERATORS + INTERVAL_LENGTH - 1 {
-        let sample = generator.poll(); // Stream shouldn't end in this loop
+        let sample = samples[i as usize]; // Stream shouldn't end in this loop
         if i < NUM_GENERATORS - 1 {
             let expected = min(i + 1, INTERVAL_LENGTH) as f32;
             assert!(

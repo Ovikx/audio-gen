@@ -1,7 +1,7 @@
 use crate::{
     context::AudioContext,
     math::spline_polynomial::{Point, spline_coefficients},
-    source::Source,
+    source::{NodeOutput, Source},
 };
 
 pub struct SplineFloatNode {
@@ -30,25 +30,16 @@ impl SplineFloatNode {
             current_x_value_idx: 0, // This works as a default since all values will be larger than the first x-value, leading to a cache invalidation
         }
     }
-}
 
-impl Source for SplineFloatNode {
-    fn poll(
-        &mut self,
-        audio_context: &AudioContext,
-        id_to_output: &crate::source::NodeOutput,
-    ) -> Option<f32> {
-        id_to_output[self.frequency_source_id].map(|f| {
+    fn poll(&mut self, audio_context: &AudioContext, frequency: Option<f32>) -> Option<f32> {
+        frequency.map(|f| {
             let mut used_x_value_idx = self.current_x_value_idx;
             let sample: f32;
 
             if used_x_value_idx > 0 && self.current_time <= self.x_values[used_x_value_idx] {
                 // A cached index of 0 only appears as the default, so it should not be used
-                sample = specific_interpolate(
-                    self.current_time,
-                    &self.coefficients,
-                    used_x_value_idx - 1,
-                );
+                sample =
+                    specific_interpolate(self.current_time, &self.coefficients, used_x_value_idx - 1);
             } else {
                 (sample, used_x_value_idx) =
                     general_interpolate(self.current_time, &self.x_values, &self.coefficients);
@@ -69,6 +60,20 @@ impl Source for SplineFloatNode {
             self.current_time = self.current_time.fract();
             sample
         })
+    }
+}
+
+impl Source for SplineFloatNode {
+    fn batch_poll(
+        &mut self,
+        num_samples: usize,
+        audio_context: &AudioContext,
+        id_to_output: &NodeOutput,
+        output: &mut [Option<f32>],
+    ) {
+        for idx in 0..num_samples {
+            output[idx] = self.poll(audio_context, id_to_output[self.frequency_source_id][idx]);
+        }
     }
 
     fn id(&self) -> usize {
