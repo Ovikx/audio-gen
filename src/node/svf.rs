@@ -19,6 +19,7 @@ pub struct SVFNode {
     lp: f32,
 }
 
+#[derive(Debug)]
 pub enum FilterType {
     HighPass,
     BandPass,
@@ -57,10 +58,8 @@ impl SVFNode {
         resonance: Option<f32>,
         sample: Option<f32>,
     ) -> Option<f32> {
-        frequency_cutoff
-            .zip(resonance)
-            .zip(sample)
-            .map(|((frequency_cutoff, resonance), sample)| {
+        frequency_cutoff.zip(resonance).zip(sample).map(
+            |((frequency_cutoff, resonance), sample)| {
                 let frequency_control =
                     2.0 * (PI * frequency_cutoff / audio_context.sample_rate).sin();
                 let damping = 1.0 / resonance;
@@ -74,7 +73,8 @@ impl SVFNode {
                     FilterType::BandPass => self.bp,
                     FilterType::LowPass => self.lp,
                 }
-            })
+            },
+        )
     }
 }
 

@@ -1,12 +1,9 @@
 use rayon::prelude::*;
-use std::sync::MutexGuard;
 
 use crate::{
     context::AudioContext,
-    node::FloatSource,
     scheduler::{
-        LayeredSchedule, build_parallel_schedule, build_schedule, nodes_to_references,
-        remove_isolated_references, root_id,
+        build_parallel_schedule, nodes_to_references, remove_isolated_references, root_id,
     },
     source::{NodeOutput, Source},
 };
@@ -17,7 +14,6 @@ pub struct SampleGenerator {
     audio_context: AudioContext,
     id_to_output: NodeOutput,
     num_samples: usize,
-    schedule: Vec<usize>,
     layered_node_schedule: Vec<Vec<Box<dyn Source>>>,
     layered_output_scratch: Vec<Vec<Vec<Option<f32>>>>, // [layer][node in layer][sample]
     root_id: usize,
@@ -37,6 +33,7 @@ impl SampleGenerator {
             .max()
             .ok_or(anyhow!("empty node vector"))?;
 
+        dbg!(nodes.len());
         // We use a default node for cases where a node with a particular ID instead of using Option<_>.
         // This is to avoid having to unwrap the Option. We set the default node's ID to an unreachable value.
         // Default nodes are not touched in normal cases.
@@ -54,7 +51,6 @@ impl SampleGenerator {
         let trimmed_references = remove_isolated_references(references);
         let root_id = root_id(&trimmed_references)?;
 
-        let schedule = build_schedule(&trimmed_references, max_id)?;
         let layered_schedule = build_parallel_schedule(&trimmed_references, max_id, root_id)?;
 
         let mut layered_node_schedule: Vec<Vec<Box<dyn Source>>> = vec![];
@@ -77,7 +73,6 @@ impl SampleGenerator {
         Ok(SampleGenerator {
             audio_context: audio_context,
             id_to_output,
-            schedule: schedule,
             num_samples,
             root_id,
             layered_node_schedule,

@@ -11,7 +11,7 @@ fn test_overlapping_sample_aggregation() {
     const INTERVAL_LENGTH: u32 = 5;
     const SAMPLE_RATE: f32 = 1.;
     let mut intervals: Vec<SourceInterval> = vec![];
-    let mut graph = Graph::new();
+    let mut graph = Graph::new(false);
 
     for i in 0..NUM_GENERATORS {
         let float_id = graph.float_node(FLOAT_VALUE);

@@ -1,5 +1,3 @@
-use std::sync::{Arc, Mutex};
-
 use audio_gen::{
     context::AudioContext,
     generator::SampleGenerator,

@@ -12,7 +12,7 @@ fn run_generator(generator: &mut SampleGenerator, num_batches: u32) {
 
 fn bench_single_chain(c: &mut Criterion) {
     const N: usize = 1 << 11;
-    let mut graph = Graph::new();
+    let mut graph = Graph::new(false);
     let mut current_node_id = graph.float_node(1.);
 
     for _ in 0..N {
@@ -25,7 +25,7 @@ fn bench_single_chain(c: &mut Criterion) {
         SampleGenerator::new(schedule, AudioContext::new(44100.), BATCH_SIZE).unwrap();
 
     let mut group = c.benchmark_group("single chain");
-    for num_batches in [1u32] {
+    for num_batches in [1u32, 10, 20, 100] {
         group.bench_function(
             format!(
                 "{} nodes ({} batches of {} = {} samples)",
@@ -41,8 +41,8 @@ fn bench_single_chain(c: &mut Criterion) {
 }
 
 fn bench_binary(c: &mut Criterion) {
-    const N: usize = 1 << 11;
-    let mut graph = Graph::new();
+    const N: usize = 1 << 13;
+    let mut graph = Graph::new(false);
     let mut current_node_id = graph.float_node(1.);
 
     for _ in 0..N {
@@ -56,7 +56,7 @@ fn bench_binary(c: &mut Criterion) {
         SampleGenerator::new(schedule, AudioContext::new(44100.), BATCH_SIZE).unwrap();
 
     let mut group = c.benchmark_group("binary");
-    for num_batches in [1u32] {
+    for num_batches in [1u32, 10, 20, 100] {
         group.bench_function(
             format!(
                 "{} nodes ({} batches of {} = {} samples)",
