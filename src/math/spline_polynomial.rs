@@ -3,6 +3,7 @@ use nalgebra::{DMatrix, DVector};
 pub type Point = (f32, f32);
 
 pub fn spline_coefficients(sorted_points: &Vec<Point>) -> Vec<f32> {
+    dbg!(sorted_points);
     let num_points = sorted_points.len();
     let mut slopes = vec![0.0f32; num_points - 1];
     let mut derivatives = vec![0.0f32; num_points];

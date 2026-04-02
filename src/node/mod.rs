@@ -1,4 +1,5 @@
 mod absolute_value;
+mod adsr;
 mod external_float;
 mod float;
 mod freeverb;
@@ -13,6 +14,7 @@ mod sum;
 mod svf;
 
 pub use absolute_value::AbsoluteValue;
+pub use adsr::ADSRNode;
 pub use external_float::ExternalFloatNode;
 pub use float::FloatSource;
 pub use freeverb::FreeverbNode;

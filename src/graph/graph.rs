@@ -5,9 +5,9 @@ use crate::{
     input_buffer::SharedExternalInputBuffer,
     math::spline_polynomial::Point,
     node::{
-        AbsoluteValue, ExternalFloatNode, FilterType, FloatSource, FreeverbNode, MultiplyNode,
-        NoiseNode, SVFNode, SawOscillatorNode, SequenceNode, SineOscillatorNode, SourceInterval,
-        SplineFloatNode, SquareOscillatorNode, SumNode,
+        ADSRNode, AbsoluteValue, ExternalFloatNode, FilterType, FloatSource, FreeverbNode,
+        MultiplyNode, NoiseNode, SVFNode, SawOscillatorNode, SequenceNode, SineOscillatorNode,
+        SourceInterval, SplineFloatNode, SquareOscillatorNode, SumNode,
     },
     source::Source,
 };
@@ -233,6 +233,32 @@ impl Graph {
                 damping_source_id,
                 wet_source_id,
                 dry_source_id,
+            )));
+            self.current_id += 1;
+        }
+        id
+    }
+
+    pub fn adsr_node(
+        &mut self,
+        sample_source_id: usize,
+        duration: f32,
+        attack: f32,
+        decay: f32,
+        sustain: f32,
+        release: f32,
+    ) -> usize {
+        let signature = NodeSignature::new(ADSR, vec![sample_source_id]);
+        let (id, signature_exists) = self.fetch_signature_id(signature);
+        if !signature_exists {
+            self.nodes.push(Box::new(ADSRNode::new(
+                id,
+                sample_source_id,
+                duration,
+                attack,
+                decay,
+                sustain,
+                release,
             )));
             self.current_id += 1;
         }
