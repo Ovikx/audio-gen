@@ -233,12 +233,8 @@ impl FreeverbNode {
         wet: Option<f32>,
         dry: Option<f32>,
     ) -> Option<f32> {
-        sample
-            .zip(room_size)
-            .zip(damping)
-            .zip(wet)
-            .zip(dry)
-            .map(|((((sample, room_size), damping), wet), dry)| {
+        sample.zip(room_size).zip(damping).zip(wet).zip(dry).map(
+            |((((sample, room_size), damping), wet), dry)| {
                 // Smooth room_size and damping to suppress clicks under modulation.
                 self.smoothed_room_size += SMOOTH_COEFF * (room_size - self.smoothed_room_size);
                 self.smoothed_damping += SMOOTH_COEFF * (damping - self.smoothed_damping);
@@ -263,7 +259,8 @@ impl FreeverbNode {
                     .fold(comb_sum, |s, ap| ap.process(s));
 
                 reverb_out * wet + sample * dry
-            })
+            },
+        )
     }
 }
 
