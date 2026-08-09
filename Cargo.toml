@@ -1,17 +1,20 @@
 [package]
 name = "audio_gen"
+description = "Graph-defined audio synthesis and sequencing"
 version = "0.1.0"
 edition = "2024"
+repository = "https://github.com/Ovikx/audio-gen"
+license = "Apache-2.0"
 
 [dependencies]
 anyhow = "1.0.102"
 nalgebra = "0.34"
-test-utils = { path = "test-utils" }
 rand = "0.9.2"
 rayon = "1.11.0"
 
 [dev-dependencies]
 criterion = { version = "0.8", features = ["html_reports"] }
+test-utils = { path = "test-utils" }
 
 [[bench]]
 name = "generator"
