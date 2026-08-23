@@ -19,12 +19,7 @@ fn test_square_oscillator_node_sequence() {
 
     let samples = generator.batch_poll();
     let expected_samples: Vec<f32> = vec![1.0, 1.0, -1.0, -1.0];
-    dbg!(&samples);
     for i in 0..num_sets * 4 {
-        dbg!(
-            samples[i as usize],
-            expected_samples[((i as u32) % 4) as usize]
-        );
         assert!(threshold_eq_float32(
             samples[i as usize],
             expected_samples[((i as u32) % 4) as usize]

@@ -111,12 +111,7 @@ mod tests {
 
         let expected_samples: Vec<f32> = vec![0.25, 0.5, 0.75, 0.0];
         assert!(threshold_eq_float32(samples[0], 0.));
-        dbg!(&samples);
         for i in 1..num_sets * 4 {
-            dbg!(
-                samples[i as usize],
-                expected_samples[((i as u32) % 4) as usize]
-            );
             assert!(threshold_eq_float32(
                 samples[i as usize],
                 expected_samples[(((i - 1) as u32) % 4) as usize]

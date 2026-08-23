@@ -14,7 +14,6 @@ pub struct MediaNode {
 impl MediaNode {
     pub fn new(id: usize, mut wav_reader: WavReader<BufReader<File>>) -> Self {
         let num_channels = wav_reader.spec().channels;
-        dbg!(num_channels);
         let samples = wav_reader
             .samples::<f32>()
             .enumerate()

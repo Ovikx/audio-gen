@@ -33,7 +33,6 @@ impl SampleGenerator {
             .max()
             .ok_or(anyhow!("empty node vector"))?;
 
-        dbg!(nodes.len());
         // We use a default node for cases where a node with a particular ID instead of using Option<_>.
         // This is to avoid having to unwrap the Option. We set the default node's ID to an unreachable value.
         // Default nodes are not touched in normal cases.

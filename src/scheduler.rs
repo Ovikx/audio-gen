@@ -237,14 +237,10 @@ pub fn build_parallel_schedule(
     }
 
     let reversed_references = reversed_references(&references, root_id)?;
-
-    // dbg!(&references);
-    // dbg!(&reversed_references);
     let mut id_to_reference: Vec<Option<&Reference>> = vec![None; max_id + 1];
     let mut id_to_depth: Vec<usize> = vec![0; max_id + 1];
     for reference in references {
         id_to_reference[reference.id] = Some(reference);
-        // dbg!(guarded_node.id());
     }
 
     // Start with leaf nodes since all depths can be derived
@@ -254,7 +250,6 @@ pub fn build_parallel_schedule(
         .filter(|reference| reference.child_ids.len() == 0)
         .map(|reference| (reference.id, 0))
         .collect();
-    // dbg!(&stack);
 
     while stack.len() > 0 {
         let (reference_id, depth) = stack
@@ -276,7 +271,6 @@ pub fn build_parallel_schedule(
         .iter()
         .max()
         .ok_or_else(|| anyhow!("expected non-empty graph"))?;
-    // dbg!(max_depth);
 
     let mut schedule: LayeredSchedule = vec![vec![]; max_depth + 1];
     for (id, depth) in id_to_depth.iter().enumerate() {
