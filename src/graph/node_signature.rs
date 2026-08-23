@@ -42,6 +42,7 @@ pub enum NodeType {
     Sum,
     SVF,
     ADSR,
+    Media,
 }
 
 #[cfg(test)]

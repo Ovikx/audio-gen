@@ -1,4 +1,6 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, path::PathBuf};
+
+use hound::WavReader;
 
 use crate::{
     graph::node_signature::{NodeSignature, NodeType::*},
@@ -6,8 +8,8 @@ use crate::{
     math::spline_polynomial::Point,
     node::{
         ADSRNode, AbsoluteValue, ExternalFloatNode, FilterType, FloatSource, FreeverbNode,
-        MultiplyNode, NoiseNode, SVFNode, SawOscillatorNode, SequenceNode, SineOscillatorNode,
-        SourceInterval, SplineFloatNode, SquareOscillatorNode, SumNode,
+        MediaNode, MultiplyNode, NoiseNode, SVFNode, SawOscillatorNode, SequenceNode,
+        SineOscillatorNode, SourceInterval, SplineFloatNode, SquareOscillatorNode, SumNode,
     },
     source::Source,
 };
@@ -260,6 +262,18 @@ impl Graph {
                 sustain,
                 release,
             )));
+            self.current_id += 1;
+        }
+        id
+    }
+
+    pub fn media_node(&mut self, wav_file_path: PathBuf) -> usize {
+        let signature = NodeSignature::new(Media, vec![]);
+        let (id, signature_exists) = self.fetch_signature_id(signature);
+        if !signature_exists {
+            let reader =
+                WavReader::open(wav_file_path).expect("media node received invalid file path: {}");
+            self.nodes.push(Box::new(MediaNode::new(id, reader)));
             self.current_id += 1;
         }
         id
