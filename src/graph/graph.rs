@@ -268,7 +268,14 @@ impl Graph {
     }
 
     pub fn media_node(&mut self, wav_file_path: PathBuf) -> usize {
-        let signature = NodeSignature::new(Media, vec![]);
+        let signature = NodeSignature::new_with_data(
+            Media,
+            vec![],
+            wav_file_path
+                .to_str()
+                .expect("expected wav file to resolve to str")
+                .to_string(),
+        );
         let (id, signature_exists) = self.fetch_signature_id(signature);
         if !signature_exists {
             let reader =
