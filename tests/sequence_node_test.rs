@@ -48,3 +48,28 @@ fn test_overlapping_sample_aggregation() {
         }
     }
 }
+
+#[test]
+fn test_consecutive_same_source() {
+    const SAMPLE_RATE: f32 = 1.;
+    const NUM_INTERVALS: u32 = 5;
+    let mut graph = Graph::new(true);
+    let float_id = graph.float_node(1.0);
+
+    let mut intervals: Vec<SourceInterval> = vec![];
+    for i in 0..NUM_INTERVALS {
+        intervals.push(SourceInterval::new(float_id, i, i + 1));
+    }
+
+    graph.sequence_node(intervals);
+    let mut generator = SampleGenerator::new(
+        graph.nodes(),
+        AudioContext::new(SAMPLE_RATE),
+        NUM_INTERVALS as usize,
+    )
+    .unwrap();
+    let samples = generator.batch_poll();
+    for sample in samples {
+        assert_eq!(sample, 1.0);
+    }
+}

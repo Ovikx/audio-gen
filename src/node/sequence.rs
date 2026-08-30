@@ -118,15 +118,6 @@ impl SequenceNode {
             buffer_vec.len() < buffer_vec.capacity()
         });
 
-        while self.next_queue_index < self.start_sorted_intervals.len()
-            && self.start_sorted_intervals[self.next_queue_index].start_index
-                <= self.current_sample_index
-        {
-            self.active_source_ids
-                .insert(self.start_sorted_intervals[self.next_queue_index].source_id);
-            self.next_queue_index += 1;
-        }
-
         while self.next_dequeue_index < self.end_sorted_intervals.len()
             && self.end_sorted_intervals[self.next_dequeue_index].end_index
                 < self.current_sample_index
@@ -140,6 +131,15 @@ impl SequenceNode {
 
             self.active_source_ids.remove(&dequeued_interval.source_id);
             self.next_dequeue_index += 1;
+        }
+
+        while self.next_queue_index < self.start_sorted_intervals.len()
+            && self.start_sorted_intervals[self.next_queue_index].start_index
+                <= self.current_sample_index
+        {
+            self.active_source_ids
+                .insert(self.start_sorted_intervals[self.next_queue_index].source_id);
+            self.next_queue_index += 1;
         }
 
         // If there's nothing to queue or dequeue, we should just return nothing.
