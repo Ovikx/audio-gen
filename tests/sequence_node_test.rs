@@ -53,23 +53,60 @@ fn test_overlapping_sample_aggregation() {
 fn test_consecutive_same_source() {
     const SAMPLE_RATE: f32 = 1.;
     const NUM_INTERVALS: u32 = 5;
+    const INTERVAL_LENGTH: u32 = 2;
     let mut graph = Graph::new(true);
     let float_id = graph.float_node(1.0);
 
     let mut intervals: Vec<SourceInterval> = vec![];
     for i in 0..NUM_INTERVALS {
-        intervals.push(SourceInterval::new(float_id, i, i + 1));
+        intervals.push(SourceInterval::new(
+            float_id,
+            i * INTERVAL_LENGTH + 1,
+            i * INTERVAL_LENGTH + INTERVAL_LENGTH,
+        ));
     }
 
     graph.sequence_node(intervals);
     let mut generator = SampleGenerator::new(
         graph.nodes(),
         AudioContext::new(SAMPLE_RATE),
-        NUM_INTERVALS as usize,
+        (INTERVAL_LENGTH * NUM_INTERVALS) as usize,
     )
     .unwrap();
+
     let samples = generator.batch_poll();
-    for sample in samples {
+    for sample in samples.into_iter().skip(1) {
         assert_eq!(sample, 1.0);
+    }
+}
+
+#[test]
+fn test_endpoint_overlap_same_source() {
+    const SAMPLE_RATE: f32 = 1.;
+    const NUM_INTERVALS: u32 = 5;
+    const INTERVAL_LENGTH: u32 = 2;
+    let mut graph = Graph::new(true);
+    let float_id = graph.float_node(1.0);
+
+    let mut intervals: Vec<SourceInterval> = vec![];
+    for i in 0..NUM_INTERVALS {
+        intervals.push(SourceInterval::new(
+            float_id,
+            i * INTERVAL_LENGTH,
+            i * INTERVAL_LENGTH + INTERVAL_LENGTH,
+        ));
+    }
+
+    graph.sequence_node(intervals);
+    let mut generator = SampleGenerator::new(
+        graph.nodes(),
+        AudioContext::new(SAMPLE_RATE),
+        (INTERVAL_LENGTH * NUM_INTERVALS) as usize,
+    )
+    .unwrap();
+
+    let samples = generator.batch_poll();
+    for (i, sample) in samples.into_iter().skip(1).enumerate() {
+        assert_eq!(sample, ((i % 2) + 1) as f32);
     }
 }
