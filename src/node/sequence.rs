@@ -45,7 +45,7 @@ pub struct SequenceNode {
     current_sample_index: u32,
 
     // Output buffer state
-    source_id_to_output_buffer: HashMap<usize, Vec<f32>>,
+    source_id_to_output_buffer: Vec<Vec<f32>>,
     interval_to_output_buffer_read_idx: HashMap<SourceInterval, usize>,
     unfilled_buffer_ids: HashSet<usize>,
 }
@@ -53,14 +53,20 @@ pub struct SequenceNode {
 impl SequenceNode {
     pub fn new(id: usize, source_intervals: Vec<SourceInterval>) -> Self {
         let mut dependency_ids = vec![];
+        let max_sources = source_intervals
+            .iter()
+            .map(|interval| interval.source_id)
+            .max()
+            .unwrap()
+            + 1;
 
         // We only need to store enough samples for the longest interval for each source
-        let mut source_id_to_max_interval_length = HashMap::new();
+        let mut source_id_to_max_interval_length: Vec<usize> = vec![0; max_sources];
         for interval in &source_intervals {
             dependency_ids.push(interval.source_id);
             let current_max = source_id_to_max_interval_length
-                .entry(interval.source_id)
-                .or_insert(0);
+                .get_mut(interval.source_id)
+                .unwrap();
             *current_max = cmp::max(
                 *current_max,
                 (interval.end_index - interval.start_index + 1) as usize,
@@ -68,11 +74,11 @@ impl SequenceNode {
         }
 
         // We know how many samples to buffer for each source, so we can preallocate all the required space
-        let mut source_id_to_output_buffer = HashMap::new();
-        let mut source_id_to_output_buffer_index = HashMap::new();
-        for (source_id, max_interval_length) in &source_id_to_max_interval_length {
-            source_id_to_output_buffer.insert(*source_id, Vec::with_capacity(*max_interval_length));
-            source_id_to_output_buffer_index.insert(*source_id, 0);
+        let mut source_id_to_output_buffer = vec![vec![]; max_sources];
+        for (source_id, max_interval_length) in source_id_to_max_interval_length.iter().enumerate()
+        {
+            let output_buffer = source_id_to_output_buffer.get_mut(source_id).unwrap();
+            *output_buffer = Vec::with_capacity(*max_interval_length);
         }
 
         let mut start_sorted_intervals = source_intervals.clone();
@@ -108,7 +114,7 @@ impl SequenceNode {
         // Dependency nodes don't wait until it's their turn to produce samples,
         // so we need to capture their output and use it later.
         self.unfilled_buffer_ids.retain(|source_id| {
-            let output_buffer = self.source_id_to_output_buffer.get_mut(source_id).unwrap();
+            let output_buffer = self.source_id_to_output_buffer.get_mut(*source_id).unwrap();
             output_buffer.push(id_to_output[*source_id][sample_idx].unwrap_or(0.));
             output_buffer.len() < output_buffer.capacity()
         });
@@ -149,7 +155,7 @@ impl SequenceNode {
                 // will actually be dense.
                 let output_buffer = self
                     .source_id_to_output_buffer
-                    .get(&interval.source_id)
+                    .get(interval.source_id)
                     .unwrap();
                 let read_index = self
                     .interval_to_output_buffer_read_idx
