@@ -20,3 +20,7 @@ test-utils = { path = "test-utils" }
 [[bench]]
 name = "generator"
 harness = false
+
+[[bench]]
+name = "sequence"
+harness = false
