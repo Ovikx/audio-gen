@@ -1,5 +1,6 @@
 mod absolute_value;
 mod adsr;
+mod delay;
 mod external_float;
 mod float;
 mod freeverb;
@@ -16,6 +17,7 @@ mod svf;
 
 pub use absolute_value::AbsoluteValue;
 pub use adsr::ADSRNode;
+pub use delay::DelayNode;
 pub use external_float::ExternalFloatNode;
 pub use float::FloatSource;
 pub use freeverb::FreeverbNode;

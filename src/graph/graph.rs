@@ -7,8 +7,8 @@ use crate::{
     input_buffer::SharedExternalInputBuffer,
     math::spline_polynomial::Point,
     node::{
-        ADSRNode, AbsoluteValue, ExternalFloatNode, FilterType, FloatSource, FreeverbNode,
-        MediaNode, MultiplyNode, NoiseNode, SVFNode, SawOscillatorNode, SequenceNode,
+        ADSRNode, AbsoluteValue, DelayNode, ExternalFloatNode, FilterType, FloatSource,
+        FreeverbNode, MediaNode, MultiplyNode, NoiseNode, SVFNode, SawOscillatorNode, SequenceNode,
         SineOscillatorNode, SourceInterval, SplineFloatNode, SquareOscillatorNode, SumNode,
     },
     source::Source,
@@ -281,6 +281,18 @@ impl Graph {
             let reader =
                 WavReader::open(wav_file_path).expect("media node received invalid file path: {}");
             self.nodes.push(Box::new(MediaNode::new(id, reader)));
+            self.current_id += 1;
+        }
+        id
+    }
+
+    pub fn delay_node(&mut self, source_id: usize, sample_delay: usize) -> usize {
+        let signature =
+            NodeSignature::new_with_data(DelayNode, vec![source_id], sample_delay.to_string());
+        let (id, signature_exists) = self.fetch_signature_id(signature);
+        if !signature_exists {
+            self.nodes
+                .push(Box::new(DelayNode::new(id, source_id, sample_delay)));
             self.current_id += 1;
         }
         id

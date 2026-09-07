@@ -43,6 +43,7 @@ pub enum NodeType {
     SVF,
     ADSR,
     Media,
+    DelayNode,
 }
 
 #[cfg(test)]
