@@ -1,5 +1,6 @@
 mod absolute_value;
 mod adsr;
+mod bitcrusher;
 mod delay;
 mod external_float;
 mod float;
@@ -17,6 +18,7 @@ mod svf;
 
 pub use absolute_value::AbsoluteValue;
 pub use adsr::ADSRNode;
+pub use bitcrusher::BitcrusherNode;
 pub use delay::DelayNode;
 pub use external_float::ExternalFloatNode;
 pub use float::FloatSource;

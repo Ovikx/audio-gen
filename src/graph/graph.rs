@@ -7,9 +7,10 @@ use crate::{
     input_buffer::SharedExternalInputBuffer,
     math::spline_polynomial::Point,
     node::{
-        ADSRNode, AbsoluteValue, DelayNode, ExternalFloatNode, FilterType, FloatSource,
-        FreeverbNode, MediaNode, MultiplyNode, NoiseNode, SVFNode, SawOscillatorNode, SequenceNode,
-        SineOscillatorNode, SourceInterval, SplineFloatNode, SquareOscillatorNode, SumNode,
+        ADSRNode, AbsoluteValue, BitcrusherNode, DelayNode, ExternalFloatNode, FilterType,
+        FloatSource, FreeverbNode, MediaNode, MultiplyNode, NoiseNode, SVFNode, SawOscillatorNode,
+        SequenceNode, SineOscillatorNode, SourceInterval, SplineFloatNode, SquareOscillatorNode,
+        SumNode,
     },
     source::Source,
 };
@@ -52,6 +53,33 @@ impl Graph {
                 decay,
                 sustain,
                 release,
+            )));
+            self.current_id += 1;
+        }
+        id
+    }
+
+    pub fn bitcrusher_node(
+        &mut self,
+        sample_source_id: usize,
+        downsampling_factor_source_id: usize,
+        resolution_factor_source_id: usize,
+    ) -> usize {
+        let signature = NodeSignature::new(
+            BitcrusherNode,
+            vec![
+                sample_source_id,
+                downsampling_factor_source_id,
+                resolution_factor_source_id,
+            ],
+        );
+        let (id, signature_exists) = self.fetch_signature_id(signature);
+        if !signature_exists {
+            self.nodes.push(Box::new(BitcrusherNode::new(
+                id,
+                sample_source_id,
+                downsampling_factor_source_id,
+                resolution_factor_source_id,
             )));
             self.current_id += 1;
         }

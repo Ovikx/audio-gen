@@ -44,6 +44,7 @@ pub enum NodeType {
     ADSR,
     Media,
     DelayNode,
+    BitcrusherNode,
 }
 
 #[cfg(test)]
