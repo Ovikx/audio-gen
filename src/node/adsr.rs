@@ -49,8 +49,8 @@ impl ADSRNode {
         }
     }
 
-    fn poll(&mut self, audio_context: &AudioContext, sample: Option<f32>) -> Option<f32> {
-        sample.map(|s| s * self.interpolator.next(self.duration, audio_context))
+    fn poll(&mut self, audio_context: &AudioContext, sample: f32) -> f32 {
+        sample * self.interpolator.next(self.duration, audio_context)
     }
 }
 
@@ -60,7 +60,7 @@ impl Source for ADSRNode {
         num_samples: usize,
         audio_context: &AudioContext,
         id_to_output: &NodeOutput,
-        output: &mut [Option<f32>],
+        output: &mut [f32],
     ) {
         for idx in 0..num_samples {
             output[idx] = self.poll(audio_context, id_to_output[self.sample_source_id][idx]);

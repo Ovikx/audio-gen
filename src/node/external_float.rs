@@ -25,8 +25,8 @@ impl ExternalFloatNode {
         }
     }
 
-    fn poll(&mut self, input: f32) -> Option<f32> {
-        Some(input)
+    fn poll(&mut self, input: f32) -> f32 {
+        input
     }
 }
 
@@ -36,7 +36,7 @@ impl Source for ExternalFloatNode {
         num_samples: usize,
         _audio_context: &AudioContext,
         _id_to_output: &NodeOutput,
-        output: &mut [Option<f32>],
+        output: &mut [f32],
     ) {
         let input = self.input_buffer.lock().unwrap().f32[self.input_buffer_index];
 

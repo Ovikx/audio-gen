@@ -18,8 +18,8 @@ impl FloatSource {
         }
     }
 
-    fn poll(&mut self) -> Option<f32> {
-        Some(self.value)
+    fn poll(&mut self) -> f32 {
+        self.value
     }
 }
 
@@ -29,7 +29,7 @@ impl Source for FloatSource {
         num_samples: usize,
         _audio_context: &AudioContext,
         _id_to_output: &NodeOutput,
-        output: &mut [Option<f32>],
+        output: &mut [f32],
     ) {
         for idx in 0..num_samples {
             output[idx] = self.poll();

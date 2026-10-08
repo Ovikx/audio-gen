@@ -480,10 +480,10 @@ mod tests {
             num_samples: usize,
             _audio_context: &AudioContext,
             _id_to_output: &NodeOutput,
-            output: &mut [Option<f32>],
+            output: &mut [f32],
         ) {
             for idx in 0..num_samples {
-                output[idx] = Some(self.value);
+                output[idx] = self.value;
             }
         }
 
@@ -518,7 +518,7 @@ mod tests {
             num_samples: usize,
             _audio_context: &AudioContext,
             id_to_output: &NodeOutput,
-            output: &mut [Option<f32>],
+            output: &mut [f32],
         ) {
             for idx in 0..num_samples {
                 output[idx] = id_to_output[self.value_source_id][idx];
@@ -558,12 +558,11 @@ mod tests {
             num_samples: usize,
             _audio_context: &AudioContext,
             id_to_output: &NodeOutput,
-            output: &mut [Option<f32>],
+            output: &mut [f32],
         ) {
             for idx in 0..num_samples {
                 output[idx] = id_to_output[self.value_source1_id][idx]
-                    .zip(id_to_output[self.value_source2_id][idx])
-                    .map(|(augend, addend)| augend + addend);
+                    + id_to_output[self.value_source2_id][idx];
             }
         }
 

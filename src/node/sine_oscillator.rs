@@ -21,15 +21,13 @@ impl SineOscillatorNode {
         }
     }
 
-    fn poll(&mut self, audio_context: &AudioContext, frequency: Option<f32>) -> Option<f32> {
-        frequency.map(|f| {
-            let sample = self.phase.sin();
-            self.phase += f * 2.0 * PI / audio_context.sample_rate;
-            if self.phase > 2.0 * PI {
-                self.phase -= 2.0 * PI;
-            }
-            sample
-        })
+    fn poll(&mut self, audio_context: &AudioContext, frequency: f32) -> f32 {
+        let sample = self.phase.sin();
+        self.phase += frequency * 2.0 * PI / audio_context.sample_rate;
+        if self.phase > 2.0 * PI {
+            self.phase -= 2.0 * PI;
+        }
+        sample
     }
 }
 
@@ -39,7 +37,7 @@ impl Source for SineOscillatorNode {
         num_samples: usize,
         audio_context: &AudioContext,
         id_to_output: &NodeOutput,
-        output: &mut [Option<f32>],
+        output: &mut [f32],
     ) {
         for idx in 0..num_samples {
             output[idx] = self.poll(audio_context, id_to_output[self.frequency_source_id][idx]);

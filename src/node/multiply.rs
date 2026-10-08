@@ -20,8 +20,8 @@ impl MultiplyNode {
         }
     }
 
-    fn poll(&mut self, multiplicand: Option<f32>, multiplier: Option<f32>) -> Option<f32> {
-        Some(multiplicand.unwrap_or(1.) * multiplier.unwrap_or(1.))
+    fn poll(&mut self, multiplicand: f32, multiplier: f32) -> f32 {
+        multiplicand * multiplier
     }
 }
 
@@ -31,7 +31,7 @@ impl Source for MultiplyNode {
         num_samples: usize,
         _audio_context: &AudioContext,
         id_to_output: &NodeOutput,
-        output: &mut [Option<f32>],
+        output: &mut [f32],
     ) {
         for idx in 0..num_samples {
             output[idx] = self.poll(

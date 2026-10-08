@@ -18,8 +18,8 @@ impl AbsoluteValue {
         }
     }
 
-    fn poll(&mut self, input: Option<f32>) -> Option<f32> {
-        input.map(|input| input.abs())
+    fn poll(&mut self, input: f32) -> f32 {
+        input.abs()
     }
 }
 
@@ -29,7 +29,7 @@ impl Source for AbsoluteValue {
         num_samples: usize,
         _audio_context: &AudioContext,
         id_to_output: &NodeOutput,
-        output: &mut [Option<f32>],
+        output: &mut [f32],
     ) {
         for idx in 0..num_samples {
             output[idx] = self.poll(id_to_output[self.source_id][idx]);

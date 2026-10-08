@@ -20,8 +20,8 @@ impl NoiseNode {
         }
     }
 
-    fn poll(&mut self) -> Option<f32> {
-        Some(self.rng_gen.random_range(-1.0..=1.0))
+    fn poll(&mut self) -> f32 {
+        self.rng_gen.random_range(-1.0..=1.0)
     }
 }
 
@@ -31,7 +31,7 @@ impl Source for NoiseNode {
         num_samples: usize,
         _audio_context: &AudioContext,
         _id_to_output: &NodeOutput,
-        output: &mut [Option<f32>],
+        output: &mut [f32],
     ) {
         for idx in 0..num_samples {
             output[idx] = self.poll();

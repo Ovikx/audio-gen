@@ -225,42 +225,31 @@ impl FreeverbNode {
         );
     }
 
-    fn poll(
-        &mut self,
-        sample: Option<f32>,
-        room_size: Option<f32>,
-        damping: Option<f32>,
-        wet: Option<f32>,
-        dry: Option<f32>,
-    ) -> Option<f32> {
-        sample.zip(room_size).zip(damping).zip(wet).zip(dry).map(
-            |((((sample, room_size), damping), wet), dry)| {
-                // Smooth room_size and damping to suppress clicks under modulation.
-                self.smoothed_room_size += SMOOTH_COEFF * (room_size - self.smoothed_room_size);
-                self.smoothed_damping += SMOOTH_COEFF * (damping - self.smoothed_damping);
+    fn poll(&mut self, sample: f32, room_size: f32, damping: f32, wet: f32, dry: f32) -> f32 {
+        // Smooth room_size and damping to suppress clicks under modulation.
+        self.smoothed_room_size += SMOOTH_COEFF * (room_size - self.smoothed_room_size);
+        self.smoothed_damping += SMOOTH_COEFF * (damping - self.smoothed_damping);
 
-                let input = sample * FIXED_GAIN;
+        let input = sample * FIXED_GAIN;
 
-                // 8 parallel feedback comb filters.
-                let comb_sum: f32 = self
-                    .combs
-                    .as_mut()
-                    .unwrap()
-                    .iter_mut()
-                    .map(|c| c.process(input, self.smoothed_room_size, self.smoothed_damping))
-                    .sum();
+        // 8 parallel feedback comb filters.
+        let comb_sum: f32 = self
+            .combs
+            .as_mut()
+            .unwrap()
+            .iter_mut()
+            .map(|c| c.process(input, self.smoothed_room_size, self.smoothed_damping))
+            .sum();
 
-                // 4 series allpass filters.
-                let reverb_out = self
-                    .allpasses
-                    .as_mut()
-                    .unwrap()
-                    .iter_mut()
-                    .fold(comb_sum, |s, ap| ap.process(s));
+        // 4 series allpass filters.
+        let reverb_out = self
+            .allpasses
+            .as_mut()
+            .unwrap()
+            .iter_mut()
+            .fold(comb_sum, |s, ap| ap.process(s));
 
-                reverb_out * wet + sample * dry
-            },
-        )
+        reverb_out * wet + sample * dry
     }
 }
 
@@ -270,7 +259,7 @@ impl Source for FreeverbNode {
         num_samples: usize,
         audio_context: &AudioContext,
         id_to_output: &NodeOutput,
-        output: &mut [Option<f32>],
+        output: &mut [f32],
     ) {
         if self.combs.is_none() {
             self.init_filters(audio_context.sample_rate);

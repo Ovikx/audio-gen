@@ -35,28 +35,23 @@ impl BitcrusherNode {
         }
     }
 
-    pub fn poll(
-        &mut self,
-        sample: Option<f32>,
-        downsampling_factor: Option<f32>,
-        resolution_factor: Option<f32>,
-    ) -> Option<f32> {
+    pub fn poll(&mut self, sample: f32, downsampling_factor: f32, resolution_factor: f32) -> f32 {
         // Extremely low downsampling and resolution factors aren't
         // practical, so let's use a slightly high lower bound. This also
         // eliminates divide-by-zero errors.
-        let downsampling_factor = downsampling_factor.unwrap_or(1.0).clamp(0.01, 1.0);
-        let resolution_factor = resolution_factor.unwrap_or(1.0).clamp(0.01, 1.0);
+        let downsampling_factor = downsampling_factor.clamp(0.01, 1.0);
+        let resolution_factor = resolution_factor.clamp(0.01, 1.0);
 
         if self.phase >= 1.0 {
             self.phase -= 1.0;
-            self.sample_to_keep = sample;
+            self.sample_to_keep = Some(sample);
         }
         self.phase += downsampling_factor;
 
         let reduced_resolution_sample = if let Some(real_sample) = self.sample_to_keep {
-            Some(reduce_sample_resolution(real_sample, resolution_factor))
+            reduce_sample_resolution(real_sample, resolution_factor)
         } else {
-            None
+            0.
         };
 
         reduced_resolution_sample
@@ -69,7 +64,7 @@ impl Source for BitcrusherNode {
         num_samples: usize,
         _audio_context: &crate::context::AudioContext,
         id_to_output: &crate::source::NodeOutput,
-        output: &mut [Option<f32>],
+        output: &mut [f32],
     ) {
         for idx in 0..num_samples {
             output[idx] = self.poll(

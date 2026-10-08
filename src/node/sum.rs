@@ -20,8 +20,8 @@ impl SumNode {
         }
     }
 
-    fn poll(&mut self, augend: Option<f32>, addend: Option<f32>) -> Option<f32> {
-        Some(augend.unwrap_or(0.) + addend.unwrap_or(0.))
+    fn poll(&mut self, augend: f32, addend: f32) -> f32 {
+        augend + addend
     }
 }
 
@@ -31,7 +31,7 @@ impl Source for SumNode {
         num_samples: usize,
         _audio_context: &AudioContext,
         id_to_output: &NodeOutput,
-        output: &mut [Option<f32>],
+        output: &mut [f32],
     ) {
         for idx in 0..num_samples {
             output[idx] = self.poll(

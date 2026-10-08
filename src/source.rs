@@ -1,6 +1,6 @@
 use crate::context::AudioContext;
 
-pub type NodeOutput = Vec<Vec<Option<f32>>>;
+pub type NodeOutput = Vec<Vec<f32>>;
 
 pub trait Source: Send {
     fn batch_poll(
@@ -8,7 +8,7 @@ pub trait Source: Send {
         num_samples: usize,
         audio_context: &AudioContext,
         id_to_output: &NodeOutput,
-        output: &mut [Option<f32>],
+        output: &mut [f32],
     );
     fn id(&self) -> usize; // Stored as a usize since IDs are used for indexing arrays
     fn dependency_ids(&self) -> &Vec<usize>;

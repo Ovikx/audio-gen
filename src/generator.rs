@@ -15,7 +15,7 @@ pub struct SampleGenerator {
     id_to_output: NodeOutput,
     num_samples: usize,
     layered_node_schedule: Vec<Vec<Box<dyn Source>>>,
-    layered_output_scratch: Vec<Vec<Vec<Option<f32>>>>, // [layer][node in layer][sample]
+    layered_output_scratch: Vec<Vec<Vec<f32>>>, // [layer][node in layer][sample]
     root_id: usize,
 }
 
@@ -43,7 +43,7 @@ impl SampleGenerator {
             id_to_node[id] = Some(node);
         }
 
-        let id_to_output = vec![vec![None; num_samples]; max_id + 1];
+        let id_to_output = vec![vec![0.; num_samples]; max_id + 1];
 
         // Isolated nodes in graphs with multiple nodes have no semantic meaning, so
         // removing them helps verify that the graph is valid
@@ -64,9 +64,9 @@ impl SampleGenerator {
             }
         }
 
-        let layered_output_scratch: Vec<Vec<Vec<Option<f32>>>> = layered_node_schedule
+        let layered_output_scratch: Vec<Vec<Vec<f32>>> = layered_node_schedule
             .iter()
-            .map(|layer| layer.iter().map(|_| vec![None; num_samples]).collect())
+            .map(|layer| layer.iter().map(|_| vec![0.; num_samples]).collect())
             .collect();
 
         Ok(SampleGenerator {
@@ -105,7 +105,7 @@ impl SampleGenerator {
 
         self.id_to_output[self.root_id]
             .iter()
-            .map(|sample| sample.unwrap_or(0.))
+            .map(|sample| *sample)
             .collect()
     }
 }

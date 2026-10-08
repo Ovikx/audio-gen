@@ -54,27 +54,22 @@ impl SVFNode {
     fn poll(
         &mut self,
         audio_context: &AudioContext,
-        frequency_cutoff: Option<f32>,
-        resonance: Option<f32>,
-        sample: Option<f32>,
-    ) -> Option<f32> {
-        frequency_cutoff.zip(resonance).zip(sample).map(
-            |((frequency_cutoff, resonance), sample)| {
-                let frequency_control =
-                    2.0 * (PI * frequency_cutoff / audio_context.sample_rate).sin();
-                let damping = 1.0 / resonance;
+        frequency_cutoff: f32,
+        resonance: f32,
+        sample: f32,
+    ) -> f32 {
+        let frequency_control = 2.0 * (PI * frequency_cutoff / audio_context.sample_rate).sin();
+        let damping = 1.0 / resonance;
 
-                self.hp = sample - self.lp - (damping * self.bp);
-                self.bp += frequency_control * self.hp;
-                self.lp += frequency_control * self.bp;
+        self.hp = sample - self.lp - (damping * self.bp);
+        self.bp += frequency_control * self.hp;
+        self.lp += frequency_control * self.bp;
 
-                match self.filter_type {
-                    FilterType::HighPass => self.hp,
-                    FilterType::BandPass => self.bp,
-                    FilterType::LowPass => self.lp,
-                }
-            },
-        )
+        match self.filter_type {
+            FilterType::HighPass => self.hp,
+            FilterType::BandPass => self.bp,
+            FilterType::LowPass => self.lp,
+        }
     }
 }
 
@@ -84,7 +79,7 @@ impl Source for SVFNode {
         num_samples: usize,
         audio_context: &AudioContext,
         id_to_output: &NodeOutput,
-        output: &mut [Option<f32>],
+        output: &mut [f32],
     ) {
         for idx in 0..num_samples {
             output[idx] = self.poll(

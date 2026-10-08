@@ -33,11 +33,11 @@ impl MediaNode {
         }
     }
 
-    fn poll(&mut self) -> Option<f32> {
+    fn poll(&mut self) -> f32 {
         let sample = if self.sample_idx < self.samples.len() {
-            Some(self.samples[self.sample_idx])
+            self.samples[self.sample_idx]
         } else {
-            None
+            0.
         };
         self.sample_idx += 1;
         sample
@@ -50,7 +50,7 @@ impl Source for MediaNode {
         num_samples: usize,
         _audio_context: &crate::context::AudioContext,
         _id_to_output: &crate::source::NodeOutput,
-        output: &mut [Option<f32>],
+        output: &mut [f32],
     ) {
         for idx in 0..num_samples {
             output[idx] = self.poll();

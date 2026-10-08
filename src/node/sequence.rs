@@ -110,12 +110,12 @@ impl SequenceNode {
         }
     }
 
-    fn poll(&mut self, id_to_output: &NodeOutput, sample_idx: usize) -> Option<f32> {
+    fn poll(&mut self, id_to_output: &NodeOutput, sample_idx: usize) -> f32 {
         // Dependency nodes don't wait until it's their turn to produce samples,
         // so we need to capture their output and use it later.
         self.unfilled_buffer_ids.retain(|source_id| {
             let output_buffer = self.source_id_to_output_buffer.get_mut(*source_id).unwrap();
-            output_buffer.push(id_to_output[*source_id][sample_idx].unwrap_or(0.));
+            output_buffer.push(id_to_output[*source_id][sample_idx]);
             output_buffer.len() < output_buffer.capacity()
         });
 
@@ -141,7 +141,7 @@ impl SequenceNode {
         if self.next_queue_index >= self.start_sorted_intervals.len()
             && self.next_dequeue_index >= self.end_sorted_intervals.len()
         {
-            return None;
+            return 0.;
         }
 
         self.current_sample_index += 1;
@@ -166,7 +166,7 @@ impl SequenceNode {
                 sample
             })
             .sum(); // The sum may go beyond the [-1.0, 1.0] range, so a clipping strategy would be required downstream.
-        Some(sample_sum)
+        sample_sum
     }
 }
 
@@ -176,7 +176,7 @@ impl Source for SequenceNode {
         num_samples: usize,
         _audio_context: &AudioContext,
         id_to_output: &NodeOutput,
-        output: &mut [Option<f32>],
+        output: &mut [f32],
     ) {
         for idx in 0..num_samples {
             output[idx] = self.poll(id_to_output, idx);
