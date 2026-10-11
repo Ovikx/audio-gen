@@ -26,12 +26,6 @@ impl SourceInterval {
     }
 }
 
-#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
-struct SourceIntervalWithId {
-    source_interval: SourceInterval,
-    id: usize,
-}
-
 /// Wrapper for a Sequencer.
 /// Nodes cannot use samples directly from a Sequencer since it doesn't
 /// implement `Source`. This node makes it possible to do so.
@@ -40,9 +34,10 @@ pub struct SequenceNode {
     dependency_ids: Vec<usize>,
 
     // Sequencing state
-    active_intervals: HashSet<SourceIntervalWithId>,
-    start_sorted_intervals: Vec<SourceIntervalWithId>,
-    end_sorted_intervals: Vec<SourceIntervalWithId>,
+    source_intervals: Vec<SourceInterval>,
+    active_interval_idxs: HashSet<usize>,
+    start_sorted_interval_idxs: Vec<usize>,
+    end_sorted_interval_idxs: Vec<usize>,
     next_queue_index: usize,
     next_dequeue_index: usize,
     current_sample_index: u32,
@@ -63,26 +58,16 @@ impl SequenceNode {
             .unwrap()
             + 1;
 
-        let source_intervals: Vec<SourceIntervalWithId> = source_intervals
-            .iter()
-            .enumerate()
-            .map(|(id, source_interval)| SourceIntervalWithId {
-                source_interval: *source_interval,
-                id,
-            })
-            .collect();
-
         // We only need to store enough samples for the longest interval for each source
         let mut source_id_to_max_interval_length: Vec<usize> = vec![0; max_sources];
-        for interval in &source_intervals {
-            dependency_ids.push(interval.source_interval.source_id);
+        for interval in source_intervals.iter() {
+            dependency_ids.push(interval.source_id);
             let current_max = source_id_to_max_interval_length
-                .get_mut(interval.source_interval.source_id)
+                .get_mut(interval.source_id)
                 .unwrap();
             *current_max = cmp::max(
                 *current_max,
-                (interval.source_interval.end_index - interval.source_interval.start_index + 1)
-                    as usize,
+                (interval.end_index - interval.start_index + 1) as usize,
             );
         }
 
@@ -94,11 +79,21 @@ impl SequenceNode {
             *output_buffer = Vec::with_capacity(*max_interval_length);
         }
 
-        let mut start_sorted_intervals = source_intervals.clone();
-        start_sorted_intervals.sort_by_key(|interval| interval.source_interval.start_index);
+        let mut enumerated_start_sorted_intervals: Vec<(usize, SourceInterval)> =
+            source_intervals.clone().into_iter().enumerate().collect();
+        enumerated_start_sorted_intervals.sort_by_key(|(_, interval)| interval.start_index);
+        let start_sorted_interval_idxs = enumerated_start_sorted_intervals
+            .iter()
+            .map(|(idx, _)| *idx)
+            .collect();
 
-        let mut end_sorted_intervals = source_intervals.clone();
-        end_sorted_intervals.sort_by_key(|interval| interval.source_interval.end_index);
+        let mut enumerated_end_sorted_intervals: Vec<(usize, SourceInterval)> =
+            source_intervals.clone().into_iter().enumerate().collect();
+        enumerated_end_sorted_intervals.sort_by_key(|(_, interval)| interval.end_index);
+        let end_sorted_interval_idxs = enumerated_end_sorted_intervals
+            .iter()
+            .map(|(idx, _)| *idx)
+            .collect();
 
         let interval_id_to_output_buffer_read_idx = vec![0; source_intervals.len()];
 
@@ -107,9 +102,10 @@ impl SequenceNode {
         SequenceNode {
             id,
             dependency_ids,
-            start_sorted_intervals,
-            end_sorted_intervals,
-            active_intervals: HashSet::new(),
+            source_intervals,
+            start_sorted_interval_idxs,
+            end_sorted_interval_idxs,
+            active_interval_idxs: HashSet::new(),
             next_queue_index: 0,
             next_dequeue_index: 0,
             current_sample_index: 0,
@@ -128,31 +124,29 @@ impl SequenceNode {
             output_buffer.len() < output_buffer.capacity()
         });
 
-        while self.next_dequeue_index < self.end_sorted_intervals.len()
-            && self.end_sorted_intervals[self.next_dequeue_index]
-                .source_interval
+        while self.next_dequeue_index < self.end_sorted_interval_idxs.len()
+            && self.source_intervals[self.end_sorted_interval_idxs[self.next_dequeue_index]]
                 .end_index
                 < self.current_sample_index
         {
-            let dequeued_interval = self.end_sorted_intervals[self.next_dequeue_index];
-            self.active_intervals.remove(&dequeued_interval);
+            let dequeued_interval = self.end_sorted_interval_idxs[self.next_dequeue_index];
+            self.active_interval_idxs.remove(&dequeued_interval);
             self.next_dequeue_index += 1;
         }
 
-        while self.next_queue_index < self.start_sorted_intervals.len()
-            && self.start_sorted_intervals[self.next_queue_index]
-                .source_interval
+        while self.next_queue_index < self.start_sorted_interval_idxs.len()
+            && self.source_intervals[self.start_sorted_interval_idxs[self.next_queue_index]]
                 .start_index
                 <= self.current_sample_index
         {
-            self.active_intervals
-                .insert(self.start_sorted_intervals[self.next_queue_index]);
+            self.active_interval_idxs
+                .insert(self.start_sorted_interval_idxs[self.next_queue_index]);
             self.next_queue_index += 1;
         }
 
         // If there's nothing to queue or dequeue, we should just return nothing.
-        if self.next_queue_index >= self.start_sorted_intervals.len()
-            && self.next_dequeue_index >= self.end_sorted_intervals.len()
+        if self.next_queue_index >= self.start_sorted_interval_idxs.len()
+            && self.next_dequeue_index >= self.end_sorted_interval_idxs.len()
         {
             return 0.;
         }
@@ -160,19 +154,19 @@ impl SequenceNode {
         self.current_sample_index += 1;
 
         let sample_sum = self
-            .active_intervals
+            .active_interval_idxs
             .iter()
-            .map(|interval| {
+            .map(|interval_idx| {
                 // TODO: Consider using a sparse vector instead of a map.
                 // If audio graphs are assembled via `Graph`, then such a vector
                 // will actually be dense.
                 let output_buffer = self
                     .source_id_to_output_buffer
-                    .get(interval.source_interval.source_id)
+                    .get(self.source_intervals[*interval_idx].source_id)
                     .unwrap();
                 let read_index = self
                     .interval_id_to_output_buffer_read_idx
-                    .get_mut(interval.id)
+                    .get_mut(*interval_idx)
                     .unwrap();
                 let sample = output_buffer[*read_index];
                 *read_index += 1;
