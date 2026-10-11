@@ -35,7 +35,7 @@ pub struct SequenceNode {
 
     // Sequencing state
     source_intervals: Vec<SourceInterval>,
-    active_interval_idxs: HashSet<usize>,
+    active_interval_idxs: Vec<usize>,
     start_sorted_interval_idxs: Vec<usize>,
     end_sorted_interval_idxs: Vec<usize>,
     next_queue_idx: usize,
@@ -105,7 +105,7 @@ impl SequenceNode {
             source_intervals,
             start_sorted_interval_idxs,
             end_sorted_interval_idxs,
-            active_interval_idxs: HashSet::new(),
+            active_interval_idxs: vec![],
             next_queue_idx: 0,
             next_dequeue_idx: 0,
             current_sample_idx: 0,
@@ -128,8 +128,9 @@ impl SequenceNode {
             && self.source_intervals[self.end_sorted_interval_idxs[self.next_dequeue_idx]].end_idx
                 < self.current_sample_idx
         {
-            let dequeued_interval = self.end_sorted_interval_idxs[self.next_dequeue_idx];
-            self.active_interval_idxs.remove(&dequeued_interval);
+            let dequeued_interval_idx = self.end_sorted_interval_idxs[self.next_dequeue_idx];
+            self.active_interval_idxs
+                .retain(|idx| *idx != dequeued_interval_idx);
             self.next_dequeue_idx += 1;
         }
 
@@ -138,7 +139,7 @@ impl SequenceNode {
                 <= self.current_sample_idx
         {
             self.active_interval_idxs
-                .insert(self.start_sorted_interval_idxs[self.next_queue_idx]);
+                .push(self.start_sorted_interval_idxs[self.next_queue_idx]);
             self.next_queue_idx += 1;
         }
 
