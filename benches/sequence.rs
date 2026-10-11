@@ -40,7 +40,7 @@ pub fn bench_random_intervals(c: &mut Criterion) {
         }
 
         graph.sequence_node(intervals);
-        graph.nodes()
+        SampleGenerator::new(graph.nodes(), AudioContext::new(44100.), BATCH_SIZE).unwrap()
     };
     let mut bench_group = c.benchmark_group("big sequence");
     for num_batches in [1u32, 10, 50] {
@@ -54,12 +54,7 @@ pub fn bench_random_intervals(c: &mut Criterion) {
             |b| {
                 b.iter_batched(
                     build_schedule,
-                    |schedule| {
-                        let mut generator =
-                            SampleGenerator::new(schedule, AudioContext::new(44100.), BATCH_SIZE)
-                                .unwrap();
-                        run_generator(&mut generator, num_batches)
-                    },
+                    |mut generator| run_generator(&mut generator, num_batches),
                     BatchSize::SmallInput,
                 )
             },
