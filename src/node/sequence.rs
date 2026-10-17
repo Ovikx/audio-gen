@@ -37,14 +37,11 @@ pub struct SequenceNode {
     source_intervals: Vec<SourceInterval>,
     active_interval_idxs: Vec<usize>,
     start_sorted_interval_idxs: Vec<usize>,
-    end_sorted_interval_idxs: Vec<usize>,
     next_queue_idx: usize,
-    next_dequeue_idx: usize,
     current_sample_idx: u32,
 
     // Output buffer state
     source_id_to_output_buffer: Vec<Vec<f32>>,
-    interval_id_to_output_buffer_read_idx: Vec<usize>,
     unfilled_buffer_ids: HashSet<usize>,
 }
 
@@ -87,16 +84,6 @@ impl SequenceNode {
             .map(|(idx, _)| *idx)
             .collect();
 
-        let mut enumerated_end_sorted_intervals: Vec<(usize, SourceInterval)> =
-            source_intervals.clone().into_iter().enumerate().collect();
-        enumerated_end_sorted_intervals.sort_by_key(|(_, interval)| interval.end_idx);
-        let end_sorted_interval_idxs = enumerated_end_sorted_intervals
-            .iter()
-            .map(|(idx, _)| *idx)
-            .collect();
-
-        let interval_id_to_output_buffer_read_idx = vec![0; source_intervals.len()];
-
         let unfilled_buffer_ids: HashSet<usize> = dependency_ids.iter().cloned().collect();
 
         SequenceNode {
@@ -104,75 +91,12 @@ impl SequenceNode {
             dependency_ids,
             source_intervals,
             start_sorted_interval_idxs,
-            end_sorted_interval_idxs,
             active_interval_idxs: vec![],
             next_queue_idx: 0,
-            next_dequeue_idx: 0,
             current_sample_idx: 0,
             source_id_to_output_buffer,
-            interval_id_to_output_buffer_read_idx,
             unfilled_buffer_ids,
         }
-    }
-
-    fn poll(&mut self, id_to_output: &NodeOutput, sample_idx: usize) -> f32 {
-        // Dependency nodes don't wait until it's their turn to produce samples,
-        // so we need to capture their output and use it later.
-        self.unfilled_buffer_ids.retain(|source_id| {
-            let output_buffer = self.source_id_to_output_buffer.get_mut(*source_id).unwrap();
-            output_buffer.push(id_to_output[*source_id][sample_idx]);
-            output_buffer.len() < output_buffer.capacity()
-        });
-
-        while self.next_dequeue_idx < self.end_sorted_interval_idxs.len()
-            && self.source_intervals[self.end_sorted_interval_idxs[self.next_dequeue_idx]].end_idx
-                < self.current_sample_idx
-        {
-            let dequeued_interval_idx = self.end_sorted_interval_idxs[self.next_dequeue_idx];
-            self.active_interval_idxs
-                .retain(|idx| *idx != dequeued_interval_idx);
-            self.next_dequeue_idx += 1;
-        }
-
-        while self.next_queue_idx < self.start_sorted_interval_idxs.len()
-            && self.source_intervals[self.start_sorted_interval_idxs[self.next_queue_idx]].start_idx
-                <= self.current_sample_idx
-        {
-            self.active_interval_idxs
-                .push(self.start_sorted_interval_idxs[self.next_queue_idx]);
-            self.next_queue_idx += 1;
-        }
-
-        // If there's nothing to queue or dequeue, we should just return nothing.
-        if self.next_queue_idx >= self.start_sorted_interval_idxs.len()
-            && self.next_dequeue_idx >= self.end_sorted_interval_idxs.len()
-        {
-            return 0.;
-        }
-
-        self.current_sample_idx += 1;
-
-        let sample_sum = self
-            .active_interval_idxs
-            .iter()
-            .map(|interval_idx| {
-                // TODO: Consider using a sparse vector instead of a map.
-                // If audio graphs are assembled via `Graph`, then such a vector
-                // will actually be dense.
-                let output_buffer = self
-                    .source_id_to_output_buffer
-                    .get(self.source_intervals[*interval_idx].source_id)
-                    .unwrap();
-                let read_idx = self
-                    .interval_id_to_output_buffer_read_idx
-                    .get_mut(*interval_idx)
-                    .unwrap();
-                let sample = output_buffer[*read_idx];
-                *read_idx += 1;
-                sample
-            })
-            .sum(); // The sum may go beyond the [-1.0, 1.0] range, so a clipping strategy would be required downstream.
-        sample_sum
     }
 }
 
@@ -184,9 +108,54 @@ impl Source for SequenceNode {
         id_to_output: &NodeOutput,
         output: &mut [f32],
     ) {
-        for idx in 0..num_samples {
-            output[idx] = self.poll(id_to_output, idx);
+        // We rely on arithmetic addition instead of assignments, so we need to
+        // clear in between batches.
+        output[..num_samples].fill(0.0);
+
+        // Dependency nodes will eagerly produce samples, so we have to capture
+        // them before they are overwritten.
+        self.unfilled_buffer_ids.retain(|source_id| {
+            let output_buffer = self.source_id_to_output_buffer.get_mut(*source_id).unwrap();
+            let num_to_copy = (output_buffer.capacity() - output_buffer.len()).min(num_samples);
+
+            output_buffer.extend_from_slice(&id_to_output[*source_id][..num_to_copy]);
+            output_buffer.len() < output_buffer.capacity()
+        });
+
+        self.active_interval_idxs.retain(|interval_idx| {
+            self.source_intervals[*interval_idx].end_idx >= self.current_sample_idx
+        });
+
+        while self.next_queue_idx < self.start_sorted_interval_idxs.len()
+            && self.source_intervals[self.start_sorted_interval_idxs[self.next_queue_idx]].start_idx
+                <= (self.current_sample_idx as usize + num_samples) as u32
+        {
+            self.active_interval_idxs
+                .push(self.start_sorted_interval_idxs[self.next_queue_idx]);
+            self.next_queue_idx += 1;
         }
+
+        for interval_idx in &self.active_interval_idxs {
+            let interval = self.source_intervals[*interval_idx];
+            let output_start_idx =
+                (interval.start_idx as i32 - self.current_sample_idx as i32).max(0) as usize;
+            let output_end_idx =
+                (interval.end_idx - self.current_sample_idx + 1).min(num_samples as u32) as usize;
+
+            let source_start_idx =
+                (self.current_sample_idx as i32 - interval.start_idx as i32).max(0) as usize;
+            let source_end_idx = source_start_idx + (output_end_idx - output_start_idx);
+
+            let source_output_buffer = &self.source_id_to_output_buffer[interval.source_id];
+            for (output_elem, &source_elem) in output[output_start_idx..output_end_idx]
+                .iter_mut()
+                .zip(source_output_buffer[source_start_idx..source_end_idx].iter())
+            {
+                *output_elem += source_elem;
+            }
+        }
+
+        self.current_sample_idx += num_samples as u32;
     }
 
     fn id(&self) -> usize {
